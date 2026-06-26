@@ -2,22 +2,28 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
+    /*
+    |----------------------------------------------------------
+    | DatabaseSeeder — Chef d'orchestre des Seeders
+    |----------------------------------------------------------
+    | Ce fichier appelle les Seeders dans le bon ordre.
+    | L'ordre est important :
+    | 1. Users d'abord (les cartes ont besoin des users)
+    | 2. Cards ensuite (les transactions ont besoin des cartes)
+    | 3. Transactions en dernier
+    |----------------------------------------------------------
+    */
+
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        $this->call([
+            UserSeeder::class,        // 1. Créer les utilisateurs
+            CardSeeder::class,        // 2. Créer les cartes
+            TransactionSeeder::class, // 3. Créer les transactions
         ]);
     }
 }
