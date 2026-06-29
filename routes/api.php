@@ -1,31 +1,33 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-
-
+use App\Http\Controllers\CardController;
 
 /*
 |----------------------------------------------------------
-| Routes publiques — accessibles sans token
+| Routes publiques — sans token
 |----------------------------------------------------------
-*/ 
-
+*/
 Route::post('/register', [AuthController::class, 'register']); // créer un compte
 Route::post('/login',    [AuthController::class, 'login']);    // se connecter
-
 
 /*
 |----------------------------------------------------------
 | Routes protégées — token obligatoire
 |----------------------------------------------------------
-| Pour accéder à ces routes, il faut envoyer le token
-| dans le header : Authorization: Bearer TON_TOKEN
-|----------------------------------------------------------
 */
-
 Route::middleware('auth:sanctum')->group(function () {
+
+    // Auth
     Route::post('/logout', [AuthController::class, 'logout']); // se déconnecter
     Route::get('/me',      [AuthController::class, 'me']);     // voir mon profil
+
+    // Cartes
+    Route::get('/cards',                [CardController::class, 'index']);   // voir toutes les cartes
+    Route::post('/cards',               [CardController::class, 'store']);   // créer une carte
+    Route::get('/cards/{id}',           [CardController::class, 'show']);    // voir une carte
+    Route::patch('/cards/{id}/block',   [CardController::class, 'block']);   // bloquer
+    Route::patch('/cards/{id}/unblock', [CardController::class, 'unblock']); // débloquer
+
 });
