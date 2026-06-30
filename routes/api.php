@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CardController;
+use App\Http\Controllers\UserController;
+
 
 /*
 |----------------------------------------------------------
@@ -29,5 +31,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/cards/{id}',           [CardController::class, 'show']);    // voir une carte
     Route::patch('/cards/{id}/block',   [CardController::class, 'block']);   // bloquer
     Route::patch('/cards/{id}/unblock', [CardController::class, 'unblock']); // débloquer
+
+    // Utilisateurs
+    Route::get('/users', [UserController::class, 'index']); // voir la liste des clients
 
 });
