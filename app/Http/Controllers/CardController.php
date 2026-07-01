@@ -7,6 +7,7 @@ use App\Models\Card;
 use App\Models\User;
 use Carbon\Carbon;
 use App\Http\Resources\CardResource;
+use App\Services\LuhnService;
 
 
 class CardController extends Controller
@@ -63,7 +64,7 @@ class CardController extends Controller
 
         // Générer le numéro de carte selon le type
         $prefix = $request->type === 'visa' ? '4532' : '5412';
-        $pan    = $prefix . rand(100000000000, 999999999999);
+        $pan = LuhnService::generate($prefix); // numéro valide algorithmiquement
 
         // Créer la carte
         $card = Card::create([
