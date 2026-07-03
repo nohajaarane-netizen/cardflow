@@ -34,6 +34,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/cards/{id}/unblock', [CardController::class, 'unblock']); // débloquer
     // Paiement
     Route::post('/payment', [PaymentController::class, 'pay']); // simuler un paiement
+    Route::post('/payment/initiate', [PaymentController::class, 'initiate']); // étape 1 — générer OTP
+    Route::post('/payment/confirm',  [PaymentController::class, 'confirm']);  // étape 2 — vérifier OTP
 
     // Utilisateurs
     Route::get('/users', [UserController::class, 'index']); // voir la liste des clients

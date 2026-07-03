@@ -1,213 +1,330 @@
 import React, { useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
 import axios from 'axios'
-import './Login.css'
+import bgImage from '../assets/cardflow-bg.png'
 
-/* ── Icônes SVG ─────────────────────────────────────────── */
+const font      = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
+const fontTitle = "'Plus Jakarta Sans', 'Inter', sans-serif"
 
-function IcoLogo() {
-    return (
-        <svg width="34" height="34" viewBox="0 0 36 36" fill="none">
-            <defs>
-                <linearGradient id="logo-g" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#93C5FD" />
-                    <stop offset="1" stopColor="#3B82F6" />
-                </linearGradient>
-            </defs>
-            <rect x="2" y="2" width="19" height="19" rx="5.5" fill="none" stroke="url(#logo-g)" strokeWidth="2.8" />
-            <rect x="15" y="15" width="19" height="19" rx="5.5" fill="none" stroke="url(#logo-g)" strokeWidth="2.8" />
-        </svg>
-    )
+const C = {
+    navy:    '#1A3A6B',
+    blue:    '#3B82F6',
+    blueDark:'#2563EB',
+    muted:   '#94A3B8',
+    border:  '#E8EDF5',
+    bg:      '#EEF2FF',
+    white:   '#FFFFFF',
+    text:    '#1E293B',
+    error:   '#EF4444',
 }
 
-function IcoEmail() {
-    return (
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-            <rect x="1" y="3" width="13" height="9" rx="2" stroke="#94A3B8" strokeWidth="1.2" />
-            <path d="M1 5l6.5 4L14 5" stroke="#94A3B8" strokeWidth="1.2" strokeLinecap="round" />
-        </svg>
-    )
-}
+export default function Login() {
+    const [email,    setEmail]    = useState('')
+    const [password, setPassword] = useState('')
+    const [showPass, setShowPass] = useState(false)
+    const [remember, setRemember] = useState(false)
+    const [error,    setError]    = useState('')
+    const [loading,  setLoading]  = useState(false)
 
-function IcoMotDePasse() {
-    return (
-        <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-            <rect x="2" y="7" width="11" height="7" rx="2" stroke="#94A3B8" strokeWidth="1.2" />
-            <path d="M5 7V5a2.5 2.5 0 015 0v2" stroke="#94A3B8" strokeWidth="1.2" strokeLinecap="round" />
-        </svg>
-    )
-}
-
-function IcoCadenas() {
-    return (
-        <svg width="11" height="11" viewBox="0 0 13 13" fill="none">
-            <rect x="2" y="6" width="9" height="6" rx="1.5" stroke="#94A3B8" strokeWidth="1.2" />
-            <path d="M4.5 6V4a2 2 0 014 0v2" stroke="#94A3B8" strokeWidth="1.2" strokeLinecap="round" />
-        </svg>
-    )
-}
-
-function IcoCheck() {
-    return (
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-            <path d="M2 5l2.5 2.5L8 3" stroke="white" strokeWidth="1.5"
-                strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-    )
-}
-
-function IcoErreur() {
-    return (
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0 }}>
-            <circle cx="7" cy="7" r="6.5" stroke="#B91C1C" strokeWidth="1.2" />
-            <path d="M7 4.5v3" stroke="#B91C1C" strokeWidth="1.4" strokeLinecap="round" />
-            <circle cx="7" cy="9.5" r="0.7" fill="#B91C1C" />
-        </svg>
-    )
-}
-
-/* ── Page Connexion ──────────────────────────────────────── */
-
-export default function Connexion() {
-    const { role } = useParams()
-    const navigate = useNavigate()
-
-    const [email, setEmail]               = useState('')
-    const [motDePasse, setMotDePasse]     = useState('')
-    const [erreur, setErreur]             = useState('')
-    const [chargement, setChargement]     = useState(false)
-
-    const estAdmin = role === 'admin'
-
-    const seConnecter = async (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault()
-        setChargement(true)
-        setErreur('')
+        setLoading(true)
+        setError('')
         try {
-            const res = await axios.post('/api/login', { email, password: motDePasse })
+            const res = await axios.post('/api/login', { email, password })
             const { token, user } = res.data
-            if (user.role !== role) {
-                setErreur('Accès refusé — mauvais portail.')
-                setChargement(false)
-                return
-            }
             localStorage.setItem('token', token)
             localStorage.setItem('user', JSON.stringify(user))
-            navigate(user.role === 'admin' ? '/admin/dashboard' : '/client/dashboard')
+            window.location.href = user.role === 'admin'
+                ? '/admin/dashboard'
+                : '/client/dashboard'
         } catch {
-            setErreur('Email ou mot de passe incorrect.')
-            setChargement(false)
+            setError('Email ou mot de passe incorrect.')
+            setLoading(false)
         }
     }
 
     return (
-        <div className="login-page">
-            <div className="login-card">
+        <>
+        <style>{`
+            @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+        `}</style>
+        <div style={{
+            display: 'flex',
+            minHeight: '100vh',
+            fontFamily: font,
+            background: C.bg,
+        }}>
 
-                {/* ══ GAUCHE — Formulaire ══ */}
-                <div className="login-left">
+            {/* ══════ GAUCHE — Mockup CardFlow ══════ */}
+            <div style={{
+                flex: '1.2',
+                position: 'relative',
+                overflow: 'hidden',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '2rem',
+                background: 'linear-gradient(135deg, #EEF2FF 0%, #E8EFFF 100%)',
+            }}>
+                {/* Cercles décoratifs en arrière-plan */}
+                <div style={{
+                    position: 'absolute', 
+                    top: '-160px', left: '-160px',
+                    width: '520px', 
+                    height: '520px', 
+                    borderRadius: '50%',
+                    background: 'rgba(99,102,241,0.05)', 
+                    pointerEvents: 'none',
+                }}/>
+                <div style={{
+                    position: 'absolute', bottom: '-120px', right: '-120px',
+                    width: '420px', height: '420px', borderRadius: '50%',
+                    background: 'rgba(59,130,246,0.05)', pointerEvents: 'none',
+                }}/>
 
-                    {/* Logo */}
-                    <div className="login-logo" onClick={() => navigate('/')}>
-                        <div className="login-logo-icon"><IcoLogo /></div>
-                        <span className="login-logo-name">CARDFLOW</span>
+                {/* Logo en haut à gauche */}
+                <div style={{
+                    position: 'absolute',
+                    top: '2rem', left: '2rem',
+                    display: 'flex', alignItems: 'center', gap: '10px',
+                }}>
+                    <div style={{
+                        width: '36px', height: '36px',
+                        background: `linear-gradient(135deg, ${C.navy}, ${C.blue})`,
+                        borderRadius: '10px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                            <rect x="1" y="5" width="16" height="10" rx="2.5" fill="white" opacity="0.9"/>
+                            <rect x="1" y="8.5" width="16" height="3" fill="white" opacity="0.4"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div style={{ fontFamily: fontTitle, fontSize: '18px', fontWeight: '800', color: C.navy }}>CardFlow</div>
+                        <div style={{ fontSize: '11px', color: C.muted }}>Gérez vos finances en toute simplicité</div>
+                    </div>
+                </div>
+
+                {/* Image mockup */}
+                <img
+                    src={bgImage}
+                    alt="CardFlow"
+                    style={{
+                        width: '100%',
+                        maxWidth: '680px',
+                        height: 'auto',
+                        objectFit: 'contain',
+                        margin: '0 auto',
+                        filter: 'drop-shadow(0 20px 40px rgba(99,102,241,0.12))',
+                    }}
+                />
+            </div>
+
+            {/* ══════ DROITE — Formulaire ══════ */}
+            <div style={{
+                flex: '1',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '2rem',
+            }}>
+                {/* Carte blanche du formulaire */}
+                <div style={{
+                    background: C.white,
+                    borderRadius: '30px',
+                    padding: '2.5rem',
+                    width: '180%',
+                    maxWidth: '500px',
+                    boxShadow: '0 4px 30px rgba(0,0,0,0.06)',
+                    border: `1px solid ${C.border}`,
+                }}>
+
+                    {/* Icône cadenas */}
+                    <div style={{
+                        width: '52px', height: '52px',
+                        background: C.bg,
+                        borderRadius: '16px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        marginBottom: '1.8rem',
+                        border: `1px solid ${C.border}`,
+                    }}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <rect x="3" y="11" width="18" height="11" rx="3" stroke={C.blue} strokeWidth="1.8"/>
+                            <path d="M7 11V7a5 5 0 0110 0v4" stroke={C.blue} strokeWidth="1.8" strokeLinecap="round"/>
+                            <circle cx="12" cy="16.5" r="1.5" fill={C.blue}/>
+                        </svg>
                     </div>
 
                     {/* Titre */}
-                    <h1 className="login-titre">
-                        {estAdmin ? 'Portail\nAdministrateur' : 'Portail Client'}
+                    <h1 style={{
+                        fontFamily: fontTitle,
+                        fontSize: '40px', 
+                        fontWeight: '800',
+                        color: C.text, 
+                        margin: '0 0 8px',
+                        letterSpacing: '-0.5px',
+                    }}>
+                        Bienvenue
                     </h1>
-                    <p className="login-sous-titre">
-                        Connectez-vous pour accéder à votre espace bancaire sécurisé.
+                    <p style={{
+                        fontSize: '16px', 
+                        color: C.muted,
+                        margin: '0 0 2rem',
+                    }}>
+                        Connectez-vous à votre espace CardFlow.
                     </p>
 
                     {/* Formulaire */}
-                    <form className="login-form" onSubmit={seConnecter}>
+                    <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
 
-                        <div className="champ">
-                            <label>Adresse e-mail</label>
-                            <div className="champ-input">
-                                <span className="champ-ico"><IcoEmail /></span>
+                        {/* Email */}
+                        <div>
+                            <label style={{ fontSize: '15px', fontWeight: '600', color: C.text, display: 'block', marginBottom: '8px' }}>
+                                Adresse email :
+                            </label>
+                            <div style={{ position: 'relative' }}>
+                                <svg style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }}
+                                    width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                    <rect x="1" y="3" width="14" height="10" rx="2" stroke={C.muted} strokeWidth="1.3"/>
+                                    <path d="M1 6l7 4 7-4" stroke={C.muted} strokeWidth="1.3"/>
+                                </svg>
                                 <input
                                     type="email"
                                     value={email}
                                     onChange={e => setEmail(e.target.value)}
-                                    placeholder={estAdmin ? 'admin@cardflow.com' : 'client@cardflow.com'}
+                                    placeholder="exemple@cardflow.com"
                                     required
+                                    style={{
+                                        width: '100%', padding: '0.85rem 1rem 0.85rem 2.8rem',
+                                        border: `1.5px solid ${C.border}`,
+                                        borderRadius: '15px', fontSize: '14px',
+                                        color: C.text, outline: 'none',
+                                        background: '#F8FAFC', boxSizing: 'border-box',
+                                        transition: 'all 0.2s', fontFamily: font,
+                                    }}
+                                    onFocus={e => { e.target.style.borderColor = C.blue; e.target.style.background = C.white; }}
+                                    onBlur={e  => { e.target.style.borderColor = C.border; e.target.style.background = '#F8FAFC'; }}
                                 />
                             </div>
                         </div>
 
-                        <div className="champ">
-                            <label>Mot de passe</label>
-                            <div className="champ-input">
-                                <span className="champ-ico"><IcoMotDePasse /></span>
+                        {/* Mot de passe */}
+                        <div>
+                            <label style={{ fontSize: '15px', fontWeight: '600', color: C.text, display: 'block', marginBottom: '8px' }}>
+                                Mot de passe :
+                            </label>
+                            <div style={{ position: 'relative' }}>
+                                <svg style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)' }}
+                                    width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                    <rect x="2" y="7.5" width="12" height="7" rx="2" stroke={C.muted} strokeWidth="1.3"/>
+                                    <path d="M5 7.5V5a3 3 0 016 0v2.5" stroke={C.muted} strokeWidth="1.3" strokeLinecap="round"/>
+                                </svg>
                                 <input
-                                    type="password"
-                                    value={motDePasse}
-                                    onChange={e => setMotDePasse(e.target.value)}
-                                    placeholder="••••••••"
+                                    type={showPass ? 'text' : 'password'}
+                                    value={password}
+                                    onChange={e => setPassword(e.target.value)}
+                                    placeholder="••••••••••"
                                     required
+                                    style={{
+                                        width: '100%', padding: '0.85rem 2.8rem 0.85rem 2.8rem',
+                                        border: `1.5px solid ${C.border}`,
+                                        borderRadius: '15px', fontSize: '14px',
+                                        color: C.text, outline: 'none',
+                                        background: '#F8FAFC', boxSizing: 'border-box',
+                                        transition: 'all 0.2s', fontFamily: font,
+                                    }}
+                                    onFocus={e => { e.target.style.borderColor = C.blue; e.target.style.background = C.white; }}
+                                    onBlur={e  => { e.target.style.borderColor = C.border; e.target.style.background = '#F8FAFC'; }}
                                 />
+                                <div onClick={() => setShowPass(!showPass)} style={{
+                                    position: 'absolute', right: '14px', top: '50%',
+                                    transform: 'translateY(-50%)', cursor: 'pointer',
+                                    display: 'flex', alignItems: 'center',
+                                }}>
+                                    {showPass ? (
+                                        <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                                            <path d="M2 10s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z" stroke={C.muted} strokeWidth="1.4"/>
+                                            <circle cx="10" cy="10" r="2.5" stroke={C.muted} strokeWidth="1.4"/>
+                                        </svg>
+                                    ) : (
+                                        <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                                            <path d="M2 10s3-6 8-6 8 6 8 6-3 6-8 6-8-6-8-6z" stroke={C.muted} strokeWidth="1.4"/>
+                                            <circle cx="10" cy="10" r="2.5" stroke={C.muted} strokeWidth="1.4"/>
+                                            <path d="M3 17L17 3" stroke={C.muted} strokeWidth="1.4" strokeLinecap="round"/>
+                                        </svg>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
-                        {erreur && (
-                            <div className="erreur">
-                                <IcoErreur /> {erreur}
+                        {/* Se souvenir + Mot de passe oublié */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={remember}
+                                    onChange={e => setRemember(e.target.checked)}
+                                    style={{ accentColor: C.blue, width: '16px', height: '16px' }}
+                                />
+                                <span style={{ fontSize: '13px', color: C.text }}>Se souvenir de moi</span>
+                            </label>
+                            <span style={{ fontSize: '13px', color: C.blue, cursor: 'pointer', fontWeight: '500' }}>
+                                Mot de passe oublié ?
+                            </span>
+                        </div>
+
+                        {/* Erreur */}
+                        {error && (
+                            <div style={{
+                                background: '#FEF2F2', border: '1px solid #FECACA',
+                                borderRadius: '10px', padding: '0.7rem 1rem',
+                                fontSize: '13px', color: C.error,
+                            }}>
+                                {error}
                             </div>
                         )}
 
-                        <button type="submit" className="login-btn" disabled={chargement}>
-                            {chargement ? 'Connexion en cours…' : 'Se connecter →'}
+                        {/* Bouton */}
+                        <button type="submit" disabled={loading} style={{
+                            width: '100%', padding: '1rem',
+                            background: loading ? C.muted : `linear-gradient(135deg, ${C.blueDark}, ${C.blue})`,
+                            color: C.white, border: 'none',
+                            borderRadius: '15px', fontSize: '16px',
+                            fontWeight: '700', cursor: loading ? 'not-allowed' : 'pointer',
+                            boxShadow: loading ? 'none' : '0 6px 20px rgba(59,130,246,0.4)',
+                            transition: 'all 0.2s', fontFamily: font,
+                            display: 'flex', alignItems: 'center',
+                            justifyContent: 'center', gap: '8px',
+                        }}>
+                            {loading ? 'Connexion...' : (
+                                <>
+                                    Se connecter
+                                   
+                                </>
+                            )}
                         </button>
                     </form>
 
-                    <div className="login-retour">
-                        <span onClick={() => navigate('/')}>← Retour à l'accueil</span>
+                    {/* Séparateur "ou" */}
+                    <div style={{
+                        display: 'flex', alignItems: 'center', gap: '12px',
+                        margin: '1.5rem 0',
+                    }}>
+                        <div style={{ flex: 1, height: '1px', background: C.border }}/>
+                        <span style={{ fontSize: '13px', color: C.muted }}>ou</span>
+                        <div style={{ flex: 1, height: '1px', background: C.border }}/>
                     </div>
 
-                    {/* Footer */}
-                    <div className="login-footer-gauche">
-                        <IcoCadenas /> Connexion sécurisée · HPS Worldwide · 2026
-                    </div>
-                </div>
-
-                {/* ══ DROITE — Visuel ══ */}
-                <div className="login-right">
-                    <h2 className="login-right-titre">
-                        {estAdmin
-                            ? 'Gérez votre plateforme bancaire en toute sécurité.'
-                            : 'Vos cartes bancaires, vos transactions, à portée de main.'}
-                    </h2>
-                    <p className="login-right-sous-titre">
-                        {estAdmin
-                            ? 'Accédez au tableau de bord, gérez les cartes clients et surveillez les alertes de fraude en temps réel.'
-                            : 'Consultez vos cartes, simulez des paiements et suivez votre historique de transactions.'}
-                    </p>
-
-                    {/* Zone image — à remplacer par votre image */}
-                    <div className="login-image">
-                        <div className="login-image-placeholder">
-                            Image à venir
-                        </div>
-                    </div>
-
-                    {/* Features */}
-                    <div className="login-right-features">
-                        {(estAdmin
-                            ? ['Tableau de bord analytique', 'Gestion des cartes clients', 'Détection de fraude automatique']
-                            : ['Mes cartes bancaires', 'Historique des transactions', 'Authentification 3DS / SMS']
-                        ).map(f => (
-                            <div key={f} className="login-right-feature">
-                                <div className="feature-dot"><IcoCheck /></div>
-                                {f}
-                            </div>
-                        ))}
+                    {/* Créer un compte */}
+                    <div style={{ textAlign: 'center', fontSize: '13px', color: C.muted }}>
+                        Pas encore de compte ?{' '}
+                        <span style={{ color: C.blue, fontWeight: '600', cursor: 'pointer' }}>
+                            Créer un compte
+                        </span>
                     </div>
                 </div>
-
             </div>
         </div>
+        </>
     )
 }
