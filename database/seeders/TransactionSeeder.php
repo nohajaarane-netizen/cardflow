@@ -3,72 +3,87 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use App\Models\Card;
 use App\Models\Transaction;
+use App\Models\Alert;
+use Carbon\Carbon;
 
 class TransactionSeeder extends Seeder
 {
-    /*
-    |----------------------------------------------------------
-    | TransactionSeeder — Remplir la table transactions
-    |----------------------------------------------------------
-    | Ce fichier crée des transactions fictives pour tester.
-    | On crée 5 transactions par carte (10 cartes × 5 = 50).
-    | Les statuts varient : acceptée, refusée, suspecte.
-    |----------------------------------------------------------
-    */
-
     public function run(): void
     {
-        $marchands = ['Jumia Maroc', 'Carrefour', 'Netflix', 'Marjane', 'Amazon'];
+        $marchands = [
+            'Marjane',        'Jumia Maroc',     'Carrefour Maroc',
+            'Netflix',        'Amazon',           'INWI',
+            'Maroc Telecom',  'ONEE',             'Shell Maroc',
+            'Starbucks',      'McDonald\'s',      'Pizza Hut Maroc',
+            'Fnac Maroc',     'Vinted',           'Booking.com',
+            'Airbnb',         'Uber Maroc',       'InDrive',
+            'Glovo Maroc',    'Noon',             'AliExpress',
+            'PlayStation',    'Apple Store',      'Google Play',
+            'Zara Maroc',     'H&M Maroc',        'Decathlon',
+        ];;
 
-        // On boucle sur les 10 cartes (card_id 1 à 10)
-        for ($cardId = 1; $cardId <= 10; $cardId++) {
+        $cards = Card::all();
 
-            // 5 transactions par carte
-            for ($i = 0; $i < 5; $i++) {
+        foreach ($cards as $card) {
+            // Nombre de transactions par carte : 8 à 20
+            $nbTx = rand(8, 20);
 
-                // On choisit un scénario aléatoire
-                $scenario = rand(1, 3);
+            for ($i = 0; $i < $nbTx; $i++) {
+                $marchand = $marchands[array_rand($marchands)];
+                $montant  = rand(5, 450) * 10; // 50 → 4500 MAD
 
-                if ($scenario === 1) {
-                    // ── Transaction acceptée ──
-                    Transaction::create([
-                        'card_id'      => $cardId,
-                        'montant'      => rand(50, 500),
-                        'marchand'     => $marchands[array_rand($marchands)],
-                        'statut'       => 'accepted',
-                        'code_reponse' => '00',        // 00 = accepté
-                        'otp'          => rand(100000, 999999),
-                        'otp_verifie'  => true,
-                    ]);
-
-                } elseif ($scenario === 2) {
-                    // ── Transaction refusée (fonds insuffisants) ──
-                    Transaction::create([
-                        'card_id'      => $cardId,
-                        'montant'      => rand(5000, 9000),
-                        'marchand'     => $marchands[array_rand($marchands)],
-                        'statut'       => 'refused',
-                        'code_reponse' => '51',        // 51 = fonds insuffisants
-                        'otp'          => null,
-                        'otp_verifie'  => false,
-                    ]);
-
+                // Déterminer le statut
+                $rand = rand(1, 100);
+                if ($card->statut === 'blocked') {
+                    $statut       = 'refused';
+                    $codeReponse  = '62';
+                } elseif ($card->statut === 'expired') {
+                    $statut       = 'refused';
+                    $codeReponse  = '54';
+                } elseif ($montant > $card->plafond) {
+                    $statut       = 'refused';
+                    $codeReponse  = '51';
+                } elseif ($rand <= 70) {
+                    $statut       = 'accepted';
+                    $codeReponse  = '00';
+                } elseif ($rand <= 85) {
+                    $statut       = 'refused';
+                    $codeReponse  = '05';
                 } else {
-                    // ── Transaction suspecte (fraude) ──
-                    Transaction::create([
-                        'card_id'      => $cardId,
-                        'montant'      => rand(8000, 15000),
-                        'marchand'     => 'Unknown Vendor',
-                        'statut'       => 'suspicious',
-                        'code_reponse' => '59',        // 59 = fraude détectée
-                        'otp'          => null,
-                        'otp_verifie'  => false,
+                    // Transaction suspecte → code 59
+                    $statut       = 'refused';
+                    $codeReponse  = '59';
+                }
+
+                // Date étalée sur les 6 derniers mois
+                $createdAt = Carbon::now()->subDays(rand(1, 180))->subHours(rand(0, 23));
+
+                $tx = Transaction::create([
+                    'card_id'      => $card->id,
+                    'montant'      => $montant,
+                    'marchand'     => $marchand,
+                    'statut'       => $statut,
+                    'code_reponse' => $codeReponse,
+                    'otp'          => $statut === 'accepted' ? str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT) : null,
+                    'otp_verifie'  => $statut === 'accepted',
+                    'created_at'   => $createdAt,
+                    'updated_at'   => $createdAt,
+                ]);
+
+                // Si code 59 → créer une alerte fraude
+                if ($codeReponse === '59') {
+                    Alert::create([
+                        'card_id'    => $card->id,
+                        'type'       => 'fraud',
+                        'message'    => 'Transaction suspecte détectée chez ' . $marchand . ' pour ' . $montant . ' MAD',
+                        'lue'        => rand(0, 1) === 1,
+                        'created_at' => $createdAt,
+                        'updated_at' => $createdAt,
                     ]);
                 }
             }
         }
-
-        // Résultat : 50 transactions créées (5 par carte × 10 cartes)
     }
 }

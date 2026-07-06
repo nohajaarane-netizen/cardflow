@@ -3,41 +3,68 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use App\Models\User;
 
 class UserSeeder extends Seeder
-{  
+{
     public function run(): void
     {
-        // ── ADMIN ──
-        // role = admin → peut gérer tous les clients et toutes les cartes
-        User::create([
-            'name'     => 'Admin CardFlow',
-            'email'    => 'admin@cardflow.com',
-            'password' => Hash::make('password123'), // hashé, jamais en clair
-            'role'     => 'admin'
-        ]);
-
-        // ── CLIENTS ──
-        // role = client → peut voir ses cartes et faire des paiements
-        $clients = [
-            ['name' => 'Noha Jaarane',  'email' => 'noha@cardflow.com', 'role' => 'client'],
-            ['name' => 'Yassine Alami', 'email' => 'yassine@cardflow.com', 'role' => 'client'],
-            ['name' => 'Fatima Zahra',  'email' => 'fatima@cardflow.com', 'role' => 'client'],
-            ['name' => 'Mohamed Amine', 'email' => 'amine@cardflow.com', 'role' => 'client'],
-            ['name' => 'Sara Benali',   'email' => 'sara@cardflow.com', 'role' => 'client'],
+        // ── 2 Admins ──
+        $admins = [
+            ['name' => 'Admin CardFlow',    'email' => 'admin@cardflow.com'],
+            ['name' => 'Karim Bensouda',    'email' => 'karim.admin@cardflow.com'],
         ];
 
-        // On boucle sur la liste et on crée chaque client
-        foreach ($clients as $client) {
-            User::create([
-                'name'     => $client['name'],
-                'email'    => $client['email'],
-                'password' => Hash::make('password123'),
-                'role'     => $client['role']
-            ]);
+        foreach ($admins as $admin) {
+            User::updateOrCreate(
+                ['email' => $admin['email']],
+                [
+                    'name'     => $admin['name'],
+                    'password' => Hash::make('password123'),
+                    'role'     => 'admin',
+                ]
+            );
         }
 
+        // ── 25 Clients marocains ──
+        $clients = [
+            ['name' => 'Noha Jaarane',       'email' => 'noha@cardflow.com'],
+            ['name' => 'Yassine Alami',      'email' => 'yassine@cardflow.com'],
+            ['name' => 'Fatima Zahra Idrissi','email' => 'fatima@cardflow.com'],
+            ['name' => 'Mohamed Amine Tazi', 'email' => 'amine@cardflow.com'],
+            ['name' => 'Sara Benali',        'email' => 'sara@cardflow.com'],
+            ['name' => 'Hamza Chakir',       'email' => 'hamza@cardflow.com'],
+            ['name' => 'Imane Bousfiha',     'email' => 'imane@cardflow.com'],
+            ['name' => 'Rachid Ouali',       'email' => 'rachid@cardflow.com'],
+            ['name' => 'Zineb Mansouri',     'email' => 'zineb@cardflow.com'],
+            ['name' => 'Khalid Berrada',     'email' => 'khalid@cardflow.com'],
+            ['name' => 'Samira Lahlou',      'email' => 'samira@cardflow.com'],
+            ['name' => 'Omar Benkirane',     'email' => 'omar@cardflow.com'],
+            ['name' => 'Nadia Filali',       'email' => 'nadia@cardflow.com'],
+            ['name' => 'Anas El Amrani',     'email' => 'anas@cardflow.com'],
+            ['name' => 'Houda Tahiri',       'email' => 'houda@cardflow.com'],
+            ['name' => 'Mehdi Bouazzaoui',   'email' => 'mehdi@cardflow.com'],
+            ['name' => 'Kenza Chraibi',      'email' => 'kenza@cardflow.com'],
+            ['name' => 'Tariq Mountassir',   'email' => 'tariq@cardflow.com'],
+            ['name' => 'Hajar Bennouna',     'email' => 'hajar@cardflow.com'],
+            ['name' => 'Soufiane Kettani',   'email' => 'soufiane@cardflow.com'],
+            ['name' => 'Rim Alaoui',         'email' => 'rim@cardflow.com'],
+            ['name' => 'Bilal Cherkaoui',    'email' => 'bilal@cardflow.com'],
+            ['name' => 'Meryem Tlemcani',    'email' => 'meryem@cardflow.com'],
+            ['name' => 'Adil Benjelloun',    'email' => 'adil@cardflow.com'],
+            ['name' => 'Loubna Saidi',       'email' => 'loubna@cardflow.com'],
+        ];
+
+        foreach ($clients as $client) {
+            User::updateOrCreate(
+                ['email' => $client['email']],
+                [
+                    'name'     => $client['name'],
+                    'password' => Hash::make('password123'),
+                    'role'     => 'client',
+                ]
+            );
+        }
     }
 }

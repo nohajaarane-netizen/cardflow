@@ -6,6 +6,7 @@ use App\Http\Controllers\CardController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\AlertController;
+use App\Http\Controllers\TransactionController;
 
 
 /*
@@ -26,6 +27,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Auth
     Route::post('/logout', [AuthController::class, 'logout']); // se déconnecter
     Route::get('/me',      [AuthController::class, 'me']);     // voir mon profil
+    Route::patch('/me',    [AuthController::class, 'updateProfile']); // modifier mon profil
 
     // Cartes
     Route::get('/cards',                [CardController::class, 'index']);   // voir toutes les cartes
@@ -39,10 +41,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/payment/confirm',  [PaymentController::class, 'confirm']);  // étape 2 — vérifier OTP
 
     // Utilisateurs
-    Route::get('/users', [UserController::class, 'index']); // voir la liste des clients
+    Route::get('/users',     [UserController::class, 'index']); // voir la liste des clients
+    Route::get('/users/all', [UserController::class, 'all']);   // voir tous les utilisateurs (admin + clients)
 
     // Alertes
     Route::get('/alerts',              [AlertController::class, 'index']);       // liste alertes
     Route::patch('/alerts/{id}/read',  [AlertController::class, 'markAsRead']); // marquer lue
+
+    // Profil — modifier
+    Route::patch('/me', [AuthController::class, 'updateProfile']);
+
+    // Transactions
+    Route::get('/transactions', [TransactionController::class, 'index']); // liste des transactions
 
 });

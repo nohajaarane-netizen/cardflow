@@ -3,50 +3,60 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use App\Models\User;
 use App\Models\Card;
+use App\Services\LuhnService;
 use Carbon\Carbon;
 
 class CardSeeder extends Seeder
 {
-    /*
-    |----------------------------------------------------------
-    | CardSeeder — Remplir la table cards avec des fausses données
-    |----------------------------------------------------------
-    | Ce fichier crée des cartes bancaires fictives pour tester.
-    | On crée 2 cartes par client : une Visa + une Mastercard.
-    | Les user_id de 2 à 6 correspondent aux 5 clients créés.
-    |----------------------------------------------------------
-    */
-
     public function run(): void
     {
-        // On boucle sur les 5 clients (user_id 2 à 6)
-        // user_id 1 = admin, il n'a pas de carte
-        for ($userId = 2; $userId <= 6; $userId++) {
+        // Récupérer tous les clients
+        $clients = User::where('role', 'client')->get();
 
-            // ── Carte Visa ──
-            Card::create([
-                'user_id'    => $userId,
-                'pan'        => '4532' . rand(100000000000, 999999999999), // numéro Visa commence par 4
-                'cvv'        => bcrypt((string) rand(100, 999)),           // CVV hashé pour la sécurité
-                'type'       => 'visa',
-                'statut'     => 'active',
-                'plafond'    => 5000,                                      // plafond 5000 MAD
-                'expiration' => Carbon::now()->addYears(3),                // expire dans 3 ans
-            ]);
+        // Types et plafonds possibles
+        $types    = ['visa', 'mastercard'];
+        $plafonds = [2000, 3000, 5000, 8000, 10000, 15000, 20000];
 
-            // ── Carte Mastercard ──
-            Card::create([
-                'user_id'    => $userId,
-                'pan'        => '5412' . rand(100000000000, 999999999999), // numéro Mastercard commence par 5
-                'cvv'        => bcrypt((string) rand(100, 999)),           // CVV hashé pour la sécurité
-                'type'       => 'mastercard',
-                'statut'     => 'active',
-                'plafond'    => 3000,                                      // plafond 3000 MAD
-                'expiration' => Carbon::now()->addYears(2),                // expire dans 2 ans
-            ]);
+        foreach ($clients as $index => $client) {
+            // Chaque client a 1, 2 ou 3 cartes
+            $nbCartes = ($index % 3) + 1;
+
+            for ($i = 0; $i < $nbCartes; $i++) {
+                $type    = $types[($index + $i) % 2];
+                $prefix  = $type === 'visa' ? '4532' : '5412';
+                $plafond = $plafonds[($index + $i) % count($plafonds)];
+
+                // Statut : 80% active, 15% blocked, 5% expired
+                $rand = rand(1, 100);
+                if ($rand <= 80)       $statut = 'active';
+                elseif ($rand <= 95)   $statut = 'blocked';
+                else                   $statut = 'expired';
+
+                // Date de création étalée sur les 6 derniers mois
+                $createdAt = Carbon::now()->subDays(rand(1, 180));
+
+                // Expiration : +3 ans depuis la création
+                $expiration = $createdAt->copy()->addYears(3);
+
+                // Si statut expired → expiration dans le passé
+                if ($statut === 'expired') {
+                    $expiration = Carbon::now()->subDays(rand(10, 90));
+                }
+
+                Card::create([
+                    'user_id'    => $client->id,
+                    'pan'        => LuhnService::generate($prefix),
+                    'cvv'        => str_pad(rand(100, 999), 3, '0', STR_PAD_LEFT),
+                    'type'       => $type,
+                    'statut'     => $statut,
+                    'plafond'    => $plafond,
+                    'expiration' => $expiration,
+                    'created_at' => $createdAt,
+                    'updated_at' => $createdAt,
+                ]);
+            }
         }
-
-        // Résultat : 10 cartes créées (2 par client × 5 clients)
     }
 }

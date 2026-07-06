@@ -9,25 +9,39 @@ class UserController extends Controller
 {
     /*
     |----------------------------------------------------------
-    | index — Liste des clients (Admin seulement)
-    |----------------------------------------------------------
-    | Renvoie tous les utilisateurs avec leur nombre de cartes
+    | index — Liste des clients seulement (Admin)
     |----------------------------------------------------------
     */
     public function index(Request $request)
     {
-        $user = $request->user();
-
-        // Seul l'admin peut voir la liste des clients
-        if ($user->role !== 'admin') {
+        if ($request->user()->role !== 'admin') {
             return response()->json(['message' => 'Accès refusé'], 403);
         }
 
-        // On récupère seulement les clients (pas les admins)
         $clients = User::where('role', 'client')
             ->withCount('cards')
-            ->get(['id', 'name', 'email', 'role']);
+            ->get(['id', 'name', 'email', 'role', 'created_at']);
 
         return response()->json($clients);
+    }
+
+    /*
+    |----------------------------------------------------------
+    | all — Liste tous les users admin + clients (Admin)
+    |----------------------------------------------------------
+    | GET /api/users/all
+    |----------------------------------------------------------
+    */
+    public function all(Request $request)
+    {
+        if ($request->user()->role !== 'admin') {
+            return response()->json(['message' => 'Accès refusé'], 403);
+        }
+
+        $users = User::withCount('cards')
+            ->orderBy('created_at', 'desc')
+            ->get(['id', 'name', 'email', 'role', 'created_at']);
+
+        return response()->json($users);
     }
 }
