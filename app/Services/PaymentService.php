@@ -8,50 +8,59 @@ use Illuminate\Support\Facades\Cache;
 
 class PaymentService
 {
+    private FraudService $fraudService;
+
+    public function __construct()
+    {
+        $this->fraudService = new FraudService();
+    }
+
     /*
     |----------------------------------------------------------
     | initiate — Lancer un paiement + générer OTP
     |----------------------------------------------------------
-    | Reçoit : card_id, montant, marchand
-    | Vérifie la carte, génère un OTP 6 chiffres
-    | Stocke l'OTP en cache 5 minutes
-    |----------------------------------------------------------
     */
     public function initiate(int $cardId, float $montant, string $marchand): array
     {
-        // Étape 1 : La carte existe ?
         $card = Card::find($cardId);
         if (!$card) {
             return ['success' => false, 'message' => 'Carte introuvable', 'code' => '14'];
         }
 
-        // Étape 2 : La carte est bloquée ?
         if ($card->statut === 'blocked') {
             return ['success' => false, 'message' => 'Carte bloquee', 'code' => '62'];
         }
 
-        // Étape 3 : Le montant respecte le plafond ?
         if ($montant > $card->plafond) {
             return ['success' => false, 'message' => 'Plafond insuffisant', 'code' => '51'];
         }
 
-        // Étape 4 : Tout OK → générer OTP 6 chiffres
-        $otp = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
+        // Vérification fraude avant de générer l'OTP
+        $fraud = $this->fraudService->analyze($card, $montant, $marchand);
+        if ($fraud['is_fraud']) {
+            $this->save($card, $montant, $marchand, '59', 'refused');
+            return [
+                'success' => false,
+                'message' => 'Transaction suspecte — fraude détectée',
+                'code'    => '59',
+                'reasons' => $fraud['reasons'],
+            ];
+        }
 
-        // Stocker l'OTP en cache pendant 5 minutes
-        // Clé unique par carte et montant
+        // Générer OTP
+        $otp = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
         $cacheKey = 'otp_' . $cardId . '_' . $montant;
         Cache::put($cacheKey, [
             'otp'      => $otp,
             'card_id'  => $cardId,
             'montant'  => $montant,
             'marchand' => $marchand,
-        ], 300); // 300 secondes = 5 minutes
+        ], 300);
 
         return [
             'success'   => true,
             'message'   => 'OTP genere — valide 5 minutes',
-            'otp'       => $otp,        // en vrai, ce serait envoyé par SMS
+            'otp'       => $otp,
             'cache_key' => $cacheKey,
         ];
     }
@@ -60,26 +69,19 @@ class PaymentService
     |----------------------------------------------------------
     | confirm — Confirmer le paiement avec l'OTP
     |----------------------------------------------------------
-    | Reçoit : cache_key, otp saisi par le client
-    | Vérifie l'OTP → enregistre la transaction
-    |----------------------------------------------------------
     */
     public function confirm(string $cacheKey, string $otpSaisi): array
     {
-        // Récupérer les données stockées en cache
         $data = Cache::get($cacheKey);
 
-        // OTP expiré ou introuvable
         if (!$data) {
             return $this->respond('05', 'refused', 'OTP expire ou invalide', null);
         }
 
-        // OTP incorrect
         if ($data['otp'] !== $otpSaisi) {
             return $this->respond('05', 'refused', 'Code SMS incorrect', null);
         }
 
-        // OTP correct → enregistrer la transaction
         $card = Card::find($data['card_id']);
         $transaction = Transaction::create([
             'card_id'      => $data['card_id'],
@@ -91,7 +93,6 @@ class PaymentService
             'otp_verifie'  => true,
         ]);
 
-        // Supprimer l'OTP du cache après utilisation
         Cache::forget($cacheKey);
 
         return $this->respond('00', 'accepted', 'Paiement accepte', $transaction);
@@ -99,7 +100,7 @@ class PaymentService
 
     /*
     |----------------------------------------------------------
-    | process — Paiement direct sans 3DS (utilisé avant)
+    | process — Paiement direct sans 3DS
     |----------------------------------------------------------
     */
     public function process(int $cardId, float $montant, string $marchand): array
@@ -120,6 +121,14 @@ class PaymentService
             $transaction = $this->save($card, $montant, $marchand, '51', 'refused');
             return $this->respond('51', 'refused', 'Plafond insuffisant', $transaction);
         }
+
+        // Vérification fraude
+        $fraud = $this->fraudService->analyze($card, $montant, $marchand);
+        if ($fraud['is_fraud']) {
+            $transaction = $this->save($card, $montant, $marchand, '59', 'refused');
+            return $this->respond('59', 'refused', 'Transaction suspecte', $transaction);
+        }
+
         $transaction = $this->save($card, $montant, $marchand, '00', 'accepted');
         return $this->respond('00', 'accepted', 'Paiement accepte', $transaction);
     }

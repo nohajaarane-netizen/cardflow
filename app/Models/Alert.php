@@ -11,6 +11,9 @@ class Alert extends Model
         'card_id', 'transaction_id',
         'type', 'message', 'lue'
     ];
+    protected $casts = [
+    'lue' => 'boolean',
+  ];
 
     // Une alerte appartient à une carte
     public function card()

@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CardController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\AlertController;
 
 
 /*
@@ -39,5 +40,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Utilisateurs
     Route::get('/users', [UserController::class, 'index']); // voir la liste des clients
+
+    // Alertes
+    Route::get('/alerts',              [AlertController::class, 'index']);       // liste alertes
+    Route::patch('/alerts/{id}/read',  [AlertController::class, 'markAsRead']); // marquer lue
 
 });
