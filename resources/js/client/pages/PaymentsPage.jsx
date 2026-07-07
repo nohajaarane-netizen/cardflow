@@ -81,8 +81,8 @@ export default function PaymentsPage() {
                 </div>
             </div>
 
-            <div className="ad-content-grid">
-                <div className="ad-panel">
+            <div className="ad-content-grid" style={{ alignItems: 'stretch' }}>
+                <div className="ad-panel" style={{ display: 'flex', flexDirection: 'column' }}>
                     <h2 style={{ fontFamily: fontTitle, fontSize: 17, fontWeight: 800, color: C.text, margin: '0 0 1.1rem' }}>Payment History</h2>
                     <div style={{ overflowX: 'auto' }}>
                     <table className="ad-table">
@@ -120,13 +120,13 @@ export default function PaymentsPage() {
                     </div>
                 </div>
 
-                <div className="ad-panel">
+                <div className="ad-panel" style={{ display: 'flex', flexDirection: 'column' }}>
                     <h2 style={{ fontFamily: fontTitle, fontSize: 17, fontWeight: 800, color: C.text, margin: '0 0 1.1rem' }}>
                         {step === 'form' ? 'New Payment' : 'Verify with OTP'}
                     </h2>
 
                     {step === 'form' ? (
-                        <form onSubmit={handleInitiate}>
+                        <form onSubmit={handleInitiate} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
                             <label className="ad-form-label" style={{ marginTop: 0 }}>Card</label>
                             <select className="ad-form-input" value={cardId} onChange={e => setCardId(e.target.value)} required>
                                 {cards.map(c => <option key={c.id} value={c.id}>{c.pan} — {c.type}</option>)}
@@ -149,12 +149,12 @@ export default function PaymentsPage() {
                                 </div>
                             )}
 
-                            <button className="ad-issue-btn" type="submit" disabled={busy || !cards.length}>
+                            <button className="ad-issue-btn" type="submit" disabled={busy || !cards.length} style={{ marginTop: 'auto', paddingTop: '0.9rem' }}>
                                 {busy ? 'Processing...' : 'Continue'} <Icon name="arrowRight" color="white" size={17} />
                             </button>
                         </form>
                     ) : (
-                        <form onSubmit={handleConfirm}>
+                        <form onSubmit={handleConfirm} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
                             <p style={{ fontSize: 13.5, color: C.muted, marginTop: 0 }}>Entrez le code à 6 chiffres reçu pour confirmer ce paiement.</p>
                             <label className="ad-form-label" style={{ marginTop: 0 }}>OTP Code</label>
                             <input className="ad-form-input" value={otp} onChange={e => setOtp(e.target.value)} maxLength={6} required style={{ letterSpacing: 6, textAlign: 'center', fontSize: 20, fontWeight: 700 }} />
@@ -170,12 +170,14 @@ export default function PaymentsPage() {
                                 </div>
                             )}
 
-                            <button className="ad-issue-btn" type="submit" disabled={busy}>
-                                {busy ? 'Verifying...' : 'Confirm Payment'} <Icon name="check" color="white" size={17} />
-                            </button>
-                            <button type="button" className="ad-btn-outline" style={{ width: '100%', justifyContent: 'center', marginTop: 10 }} onClick={() => { setStep('form'); setMsg(null) }}>
-                                Cancel
-                            </button>
+                            <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 10, paddingTop: '0.9rem' }}>
+                                <button className="ad-issue-btn" type="submit" disabled={busy} style={{ marginTop: 0 }}>
+                                    {busy ? 'Verifying...' : 'Confirm Payment'} <Icon name="check" color="white" size={17} />
+                                </button>
+                                <button type="button" className="ad-btn-outline" style={{ width: '100%', justifyContent: 'center' }} onClick={() => { setStep('form'); setMsg(null) }}>
+                                    Cancel
+                                </button>
+                            </div>
                         </form>
                     )}
                 </div>

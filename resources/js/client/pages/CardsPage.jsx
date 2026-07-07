@@ -54,7 +54,7 @@ export default function CardsPage() {
                 <StatCard label="Total Limit" value={loading ? '…' : `${counts.limit.toLocaleString('fr-FR')} MAD`} caption="Cumulated ceiling" />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.1rem', marginBottom: '1.25rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.1rem', marginBottom: '1.25rem' }}>
                 {cards.map(card => (
                     <div key={card.id} style={{
                         borderRadius: 20, padding: '1.4rem', color: 'white', position: 'relative', overflow: 'hidden',

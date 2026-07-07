@@ -43,7 +43,6 @@ export default function DashboardPage() {
         .slice(0, 8), [tx, statusFilter])
 
     const activeCards = cards.filter(c => c.statut === 'active')
-    const totalBalance = cards.reduce((s, c) => s + Number(c.plafond || 0), 0)
 
     const handlePay = async (e) => {
         e.preventDefault()
@@ -83,8 +82,8 @@ export default function DashboardPage() {
                 </div>
             )}
 
-            <div className="ad-content-grid" style={{ marginBottom: '1.25rem' }}>
-                <div className="ad-panel">
+            <div className="ad-content-grid" style={{ marginBottom: '1.25rem', alignItems: 'stretch', gridTemplateColumns: '1.1fr 1fr' }}>
+                <div className="ad-panel" style={{ display: 'flex', flexDirection: 'column' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.1rem' }}>
                         <h2 style={{ fontFamily: fontTitle, fontSize: 18, fontWeight: 800, color: C.text, margin: 0 }}>Transaction Activity</h2>
                         <select className="ad-select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
@@ -94,9 +93,9 @@ export default function DashboardPage() {
                         </select>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
                         {!loading && filteredTx.length === 0 && (
-                            <div style={{ textAlign: 'center', color: C.muted, padding: '2rem 0' }}>Aucune transaction pour le moment.</div>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, color: C.muted }}>Aucune transaction pour le moment.</div>
                         )}
                         {filteredTx.map(t => (
                             <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '0.9rem 0', borderBottom: `1px solid ${C.border}` }}>
@@ -123,10 +122,11 @@ export default function DashboardPage() {
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
-                    {cards.slice(0, 2).map((card, i) => (
+                <div style={{ display: 'grid', gridTemplateColumns: cards.length > 1 ? '1fr 1fr' : '1fr', gap: '1.1rem', alignItems: 'start', alignContent: 'start' }}>
+                    {cards.slice(0, 2).map((card) => (
                         <div key={card.id} style={{
                             borderRadius: 20, padding: '1.4rem', color: 'white', position: 'relative', overflow: 'hidden',
+                            display: 'flex', flexDirection: 'column', gap: '1.6rem',
                             background: card.type === 'visa'
                                 ? `linear-gradient(135deg, ${C.tealDark}, ${C.teal})`
                                 : `linear-gradient(135deg, #1E3A8A, ${C.blueDark})`,
@@ -135,7 +135,7 @@ export default function DashboardPage() {
                                 <span style={{ fontSize: 13, opacity: 0.85, fontWeight: 600 }}>Virtual Card</span>
                                 <span style={{ fontFamily: fontTitle, fontWeight: 800, fontSize: 15 }}>CardFlow</span>
                             </div>
-                            <div style={{ fontSize: 20, letterSpacing: 2, fontWeight: 700, fontFamily: 'monospace', margin: '1.8rem 0 1rem' }}>
+                            <div style={{ fontSize: 20, letterSpacing: 2, fontWeight: 700, fontFamily: 'monospace' }}>
                                 {card.pan}
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -148,15 +148,10 @@ export default function DashboardPage() {
                         </div>
                     ))}
                     {!loading && cards.length === 0 && (
-                        <div className="ad-panel" style={{ textAlign: 'center', color: C.muted }}>Vous n'avez aucune carte pour le moment.</div>
-                    )}
-                    <div style={{ display: 'flex', gap: '1rem' }}>
-                        <div className="ad-hero-dark" style={{ flex: 1, borderRadius: 18, padding: '1.1rem' }}>
-                            <span style={{ fontSize: 12.5, opacity: 0.8, fontWeight: 600 }}>Total Balance</span>
-                            <div style={{ fontSize: 22, fontWeight: 800, fontFamily: fontTitle, marginTop: 6 }}>{loading ? '…' : formatMoney(totalBalance)}</div>
-                            <div style={{ fontSize: 11.5, opacity: 0.7, marginTop: 4 }}>Available to spend</div>
+                        <div className="ad-panel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', color: C.muted, minHeight: 160 }}>
+                            Vous n'avez aucune carte pour le moment.
                         </div>
-                    </div>
+                    )}
                 </div>
             </div>
 

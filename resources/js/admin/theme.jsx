@@ -95,6 +95,7 @@ export function Icon({ name, size = 18, color = C.muted, style }) {
         case 'phone': return <svg {...p}><path d="M6 3.5h3l1.5 4-2 1.5a12 12 0 006 6l1.5-2 4 1.5v3a1.5 1.5 0 01-1.6 1.5A16.5 16.5 0 015 5.1 1.5 1.5 0 016.5 3.5z" stroke={color} strokeWidth="1.6" strokeLinejoin="round"/></svg>
         case 'chat': return <svg {...p}><path d="M4 5h16v11H8l-4 4V5z" stroke={color} strokeWidth="1.7" strokeLinejoin="round"/></svg>
         case 'plus': return <svg {...p}><path d="M12 5v14M5 12h14" stroke={color} strokeWidth="1.8" strokeLinecap="round"/></svg>
+        case 'eye': return <svg {...p}><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke={color} strokeWidth="1.7" strokeLinejoin="round"/><circle cx="12" cy="12" r="3" stroke={color} strokeWidth="1.7"/></svg>
         default: return null
     }
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { C, fontTitle, Icon, initialsOf, useApi, sharedCss } from '../admin/theme'
+import { C, fontTitle, Icon, initialsOf, formatMoney, useApi, sharedCss } from '../admin/theme'
 
 const MAIN_NAV = [
     { to: '/client/dashboard',     label: 'Dashboard',     icon: 'home' },
@@ -20,6 +20,8 @@ export default function ClientLayout() {
     const api = useApi()
     const [user] = useState(() => JSON.parse(localStorage.getItem('user') || '{}'))
     const [unreadAlerts, setUnreadAlerts] = useState(0)
+    const [balance, setBalance] = useState(null)
+    const [balanceHidden, setBalanceHidden] = useState(false)
 
     const refreshBadge = useCallback(async () => {
         try {
@@ -29,6 +31,15 @@ export default function ClientLayout() {
     }, [api])
 
     useEffect(() => { refreshBadge() }, [refreshBadge])
+
+    useEffect(() => {
+        api.get('/cards')
+            .then(res => {
+                const list = res.data.data || res.data
+                setBalance(list.reduce((s, c) => s + Number(c.plafond || 0), 0))
+            })
+            .catch(() => {})
+    }, [api])
 
     const handleLogout = () => {
         localStorage.removeItem('token')
@@ -89,6 +100,19 @@ export default function ClientLayout() {
                             <path d="M16 17l5-5-5-5M21 12H9" stroke={C.muted} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
                     </button>
+                </div>
+
+                <div className="ad-balance">
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span style={{ fontSize: 12.5, opacity: 0.85, fontWeight: 600 }}>Total Balance</span>
+                        <button className="ad-icon-btn" style={{ padding: 2 }} onClick={() => setBalanceHidden(v => !v)}>
+                            <Icon name="eye" size={16} color="rgba(255,255,255,0.85)" />
+                        </button>
+                    </div>
+                    <div style={{ fontSize: 20, fontWeight: 800, fontFamily: fontTitle, marginTop: 6 }}>
+                        {balanceHidden ? '••••••' : (balance === null ? '…' : formatMoney(balance))}
+                    </div>
+                    <div style={{ fontSize: 11.5, opacity: 0.7, marginTop: 4 }}>Available to spend</div>
                 </div>
             </aside>
 
