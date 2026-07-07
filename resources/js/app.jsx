@@ -13,12 +13,30 @@ import ReportsPage from './admin/pages/ReportsPage'
 import SettingsPage from './admin/pages/SettingsPage'
 import UsersPage from './admin/pages/UsersPage'
 import SupportPage from './admin/pages/SupportPage'
+import ClientLayout from './client/ClientLayout'
+import ClientDashboardPage from './client/pages/DashboardPage'
+import ClientCardsPage from './client/pages/CardsPage'
+import ClientPaymentsPage from './client/pages/PaymentsPage'
+import ClientBeneficiariesPage from './client/pages/BeneficiariesPage'
+import ClientAnalyticsPage from './client/pages/AnalyticsPage'
+import ClientSettingsPage from './client/pages/SettingsPage'
+import ClientSupportPage from './client/pages/SupportPage'
 
 function RequireAdmin({ children }) {
     const token = localStorage.getItem('token')
     const user  = JSON.parse(localStorage.getItem('user') || 'null')
 
     if (!token || !user || user.role !== 'admin') {
+        return <Navigate to="/" replace />
+    }
+    return children
+}
+
+function RequireClient({ children }) {
+    const token = localStorage.getItem('token')
+    const user  = JSON.parse(localStorage.getItem('user') || 'null')
+
+    if (!token || !user || user.role !== 'client') {
         return <Navigate to="/" replace />
     }
     return children
@@ -48,6 +66,23 @@ function App() {
                     <Route path="settings" element={<SettingsPage />} />
                     <Route path="users" element={<UsersPage />} />
                     <Route path="support" element={<SupportPage />} />
+                </Route>
+                <Route
+                    path="/client"
+                    element={
+                        <RequireClient>
+                            <ClientLayout />
+                        </RequireClient>
+                    }
+                >
+                    <Route index element={<Navigate to="dashboard" replace />} />
+                    <Route path="dashboard" element={<ClientDashboardPage />} />
+                    <Route path="cards" element={<ClientCardsPage />} />
+                    <Route path="payments" element={<ClientPaymentsPage />} />
+                    <Route path="beneficiaries" element={<ClientBeneficiariesPage />} />
+                    <Route path="analytics" element={<ClientAnalyticsPage />} />
+                    <Route path="settings" element={<ClientSettingsPage />} />
+                    <Route path="support" element={<ClientSupportPage />} />
                 </Route>
                 <Route path="*" element={<Navigate to="/" />} />
             </Routes>
