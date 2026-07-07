@@ -19,12 +19,24 @@ const C = {
 }
 
 export default function Login() {
-    const [email,    setEmail]    = useState('')
-    const [password, setPassword] = useState('')
-    const [showPass, setShowPass] = useState(false)
-    const [remember, setRemember] = useState(false)
-    const [error,    setError]    = useState('')
-    const [loading,  setLoading]  = useState(false)
+    const [mode,     setMode]      = useState('login') // 'login' | 'signup'
+    const [name,     setName]      = useState('')
+    const [email,    setEmail]     = useState('')
+    const [password, setPassword]  = useState('')
+    const [confirmPassword, setConfirmPassword] = useState('')
+    const [showPass, setShowPass]  = useState(false)
+    const [remember, setRemember]  = useState(false)
+    const [error,    setError]     = useState('')
+    const [loading,  setLoading]   = useState(false)
+
+    const isSignup = mode === 'signup'
+
+    const switchMode = (next) => {
+        setMode(next)
+        setError('')
+        setPassword('')
+        setConfirmPassword('')
+    }
 
     const handleLogin = async (e) => {
         e.preventDefault()
@@ -40,6 +52,29 @@ export default function Login() {
                 : '/client/dashboard'
         } catch {
             setError('Email ou mot de passe incorrect.')
+            setLoading(false)
+        }
+    }
+
+    const handleSignup = async (e) => {
+        e.preventDefault()
+        setError('')
+        if (password !== confirmPassword) {
+            setError('Les mots de passe ne correspondent pas.')
+            return
+        }
+        setLoading(true)
+        try {
+            const res = await axios.post('/api/register', { name, email, password })
+            const { token, user } = res.data
+            localStorage.setItem('token', token)
+            localStorage.setItem('user', JSON.stringify(user))
+            window.location.href = '/client/dashboard'
+        } catch (err) {
+            const message = err.response?.data?.message
+                || Object.values(err.response?.data?.errors || {})[0]?.[0]
+                || 'Impossible de créer le compte.'
+            setError(message)
             setLoading(false)
         }
     }
@@ -310,7 +345,7 @@ export default function Login() {
                         letterSpacing: '-0.5px',
                         lineHeight: '1.2',
                     }}>
-                        Bienvenue
+                        {isSignup ? 'Créer un compte' : 'Bienvenue'}
                     </h1>
                     <p className="cf-fade cf-d2" style={{
                         fontSize: '15px',
@@ -318,11 +353,37 @@ export default function Login() {
                         margin: '0 0 1.8rem',
                         lineHeight: '1.6',
                     }}>
-                        Connectez-vous à votre espace CardFlow pour gérer vos finances.
+                        {isSignup
+                            ? 'Créez votre espace CardFlow pour gérer vos finances.'
+                            : 'Connectez-vous à votre espace CardFlow pour gérer vos finances.'}
                     </p>
 
                     {/* Formulaire */}
-                    <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+                    <form onSubmit={isSignup ? handleSignup : handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
+
+                        {/* Nom complet (inscription uniquement) */}
+                        {isSignup && (
+                            <div className="cf-fade cf-d3">
+                                <label style={{ fontSize: '15px', fontWeight: '600', color: C.text, display: 'block', marginBottom: '6px' }}>
+                                    Nom complet
+                                </label>
+                                <div className="cf-field">
+                                    <svg className="cf-lead" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', zIndex: 1 }}
+                                        width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                        <circle cx="8" cy="5" r="2.8" stroke={C.muted} strokeWidth="1.3"/>
+                                        <path d="M2.5 14c0-2.8 2.5-4.5 5.5-4.5s5.5 1.7 5.5 4.5" stroke={C.muted} strokeWidth="1.3" strokeLinecap="round"/>
+                                    </svg>
+                                    <input
+                                        type="text"
+                                        value={name}
+                                        onChange={e => setName(e.target.value)}
+                                        placeholder="Prénom Nom"
+                                        required
+                                        className="cf-input"
+                                    />
+                                </div>
+                            </div>
+                        )}
 
                         {/* Email */}
                         <div className="cf-fade cf-d3">
@@ -387,21 +448,47 @@ export default function Login() {
                             </div>
                         </div>
 
-                        {/* Se souvenir + Mot de passe oublié */}
-                        <div className="cf-fade cf-d5" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                                <input
-                                    type="checkbox"
-                                    checked={remember}
-                                    onChange={e => setRemember(e.target.checked)}
-                                    className="cf-check"
-                                />
-                                <span style={{ fontSize: '15px', color: C.text }}>Se souvenir de moi</span>
-                            </label>
-                            <span className="cf-forgot" style={{ fontSize: '15px', color: C.blue, cursor: 'pointer', fontWeight: '500' }}>
-                                Mot de passe oublié ?
-                            </span>
-                        </div>
+                        {/* Confirmation du mot de passe (inscription uniquement) */}
+                        {isSignup && (
+                            <div className="cf-fade cf-d5">
+                                <label style={{ fontSize: '15px', fontWeight: '600', color: C.text, display: 'block', marginBottom: '6px' }}>
+                                    Confirmer le mot de passe
+                                </label>
+                                <div className="cf-field">
+                                    <svg className="cf-lead" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', zIndex: 1 }}
+                                        width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                        <rect x="2" y="7.5" width="12" height="7" rx="2" stroke={C.muted} strokeWidth="1.3"/>
+                                        <path d="M5 7.5V5a3 3 0 016 0v2.5" stroke={C.muted} strokeWidth="1.3" strokeLinecap="round"/>
+                                    </svg>
+                                    <input
+                                        type={showPass ? 'text' : 'password'}
+                                        value={confirmPassword}
+                                        onChange={e => setConfirmPassword(e.target.value)}
+                                        placeholder="••••••••••"
+                                        required
+                                        className="cf-input"
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Se souvenir + Mot de passe oublié (connexion uniquement) */}
+                        {!isSignup && (
+                            <div className="cf-fade cf-d5" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={remember}
+                                        onChange={e => setRemember(e.target.checked)}
+                                        className="cf-check"
+                                    />
+                                    <span style={{ fontSize: '15px', color: C.text }}>Se souvenir de moi</span>
+                                </label>
+                                <span className="cf-forgot" style={{ fontSize: '15px', color: C.blue, cursor: 'pointer', fontWeight: '500' }}>
+                                    Mot de passe oublié ?
+                                </span>
+                            </div>
+                        )}
 
                         {/* Erreur */}
                         {error && (
@@ -416,7 +503,9 @@ export default function Login() {
 
                         {/* Bouton */}
                         <button type="submit" disabled={loading} className="cf-btn cf-fade cf-d6">
-                            {loading ? 'Connexion...' : 'Se connecter'}
+                            {loading
+                                ? (isSignup ? 'Création...' : 'Connexion...')
+                                : (isSignup ? 'Créer mon compte' : 'Se connecter')}
                         </button>
                     </form>
 
@@ -430,12 +519,23 @@ export default function Login() {
                         <div style={{ flex: 1, height: '1px', background: C.border }}/>
                     </div>
 
-                    {/* Créer un compte */}
+                    {/* Créer un compte / Retour connexion */}
                     <div className="cf-fade cf-d6" style={{ textAlign: 'center', fontSize: '15px', color: C.muted }}>
-                        Pas encore de compte ?{' '}
-                        <span className="cf-signup" style={{ color: C.blue, fontWeight: '600', cursor: 'pointer' }}>
-                            Créer un compte
-                        </span>
+                        {isSignup ? (
+                            <>
+                                Déjà un compte ?{' '}
+                                <span className="cf-signup" style={{ color: C.blue, fontWeight: '600', cursor: 'pointer' }} onClick={() => switchMode('login')}>
+                                    Se connecter
+                                </span>
+                            </>
+                        ) : (
+                            <>
+                                Pas encore de compte ?{' '}
+                                <span className="cf-signup" style={{ color: C.blue, fontWeight: '600', cursor: 'pointer' }} onClick={() => switchMode('signup')}>
+                                    Créer un compte
+                                </span>
+                            </>
+                        )}
                     </div>
                 </div>
 
