@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { C, fontTitle, Icon, StatCard, useApi, STATUS_STYLES, PAGE_SIZE } from '../theme'
+import { useLanguage } from '../../i18n/LanguageContext'
 
 export default function CardsPage() {
     const api = useApi()
+    const { t } = useLanguage()
     const [cards, setCards] = useState([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
@@ -55,44 +57,44 @@ export default function CardsPage() {
         <>
             <div className="ad-page-header">
                 <div>
-                    <h1 style={{ fontFamily: fontTitle, fontSize: 26, fontWeight: 800, color: C.text, margin: 0 }}>Cartes</h1>
-                    <p style={{ color: C.muted, fontSize: 14, margin: '4px 0 0' }}>Gérez toutes les cartes émises sur la plateforme.</p>
+                    <h1 style={{ fontFamily: fontTitle, fontSize: 26, fontWeight: 800, color: C.text, margin: 0 }}>{t('admin.cards.title')}</h1>
+                    <p style={{ color: C.muted, fontSize: 14, margin: '4px 0 0' }}>{t('admin.cards.subtitle')}</p>
                 </div>
             </div>
 
             <div className="ad-stats">
-                <StatCard label="Total cartes" value={loading ? '…' : counts.total} caption={`${counts.active} active(s)`} />
-                <StatCard label="Actives" value={loading ? '…' : counts.active} trend={{ dir: 'up', text: `${Math.round((counts.active / (counts.total || 1)) * 100)}%` }} />
-                <StatCard label="Bloquées" value={loading ? '…' : counts.blocked} trend={counts.blocked > 0 ? { dir: 'down', text: `${counts.blocked}` } : null} />
-                <StatCard label="Expirées" value={loading ? '…' : counts.expired} caption="À renouveler" />
+                <StatCard label={t('admin.cards.total')} value={loading ? '…' : counts.total} caption={t('admin.dashboard.active_count', { count: counts.active })} />
+                <StatCard label={t('admin.cards.active')} value={loading ? '…' : counts.active} trend={{ dir: 'up', text: `${Math.round((counts.active / (counts.total || 1)) * 100)}%` }} />
+                <StatCard label={t('admin.cards.blocked')} value={loading ? '…' : counts.blocked} trend={counts.blocked > 0 ? { dir: 'down', text: `${counts.blocked}` } : null} />
+                <StatCard label={t('admin.cards.expired')} value={loading ? '…' : counts.expired} caption={t('admin.cards.renew')} />
             </div>
 
             <div className="ad-panel">
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                     <div className="ad-search">
                         <Icon name="search" size={16} />
-                        <input placeholder="Rechercher par titulaire ou numéro de carte..." value={search} onChange={e => setSearch(e.target.value)} />
+                        <input placeholder={t('admin.cards.search')} value={search} onChange={e => setSearch(e.target.value)} />
                     </div>
                     <select className="ad-select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-                        <option value="all">Tous les statuts</option>
-                        <option value="active">Active</option>
-                        <option value="blocked">Bloquée</option>
-                        <option value="expired">Expirée</option>
+                        <option value="all">{t('admin.cards.all_status')}</option>
+                        <option value="active">{t('admin.dashboard.active_status')}</option>
+                        <option value="blocked">{t('admin.dashboard.blocked_status')}</option>
+                        <option value="expired">{t('admin.dashboard.expired_status')}</option>
                     </select>
                     <select className="ad-select" value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
-                        <option value="all">Tous les types</option>
+                        <option value="all">{t('admin.cards.all_types')}</option>
                         <option value="visa">Visa</option>
                         <option value="mastercard">Mastercard</option>
                     </select>
-                    <button className="ad-btn-outline" style={{ marginLeft: 'auto' }} onClick={load}><Icon name="refresh" size={15} /> Actualiser</button>
+                    <button className="ad-btn-outline" style={{ marginLeft: 'auto' }} onClick={load}><Icon name="refresh" size={15} /> {t('common.refresh')}</button>
                 </div>
 
                 <div style={{ overflowX: 'auto' }}>
                 <table className="ad-table">
-                    <thead><tr><th>Numéro</th><th>Titulaire</th><th>Type</th><th>Plafond</th><th>Statut</th><th>Expiration</th><th></th></tr></thead>
+                    <thead><tr><th>{t('admin.cards.number')}</th><th>{t('admin.cards.holder')}</th><th>{t('common.type')}</th><th>{t('admin.cards.limit')}</th><th>{t('common.status')}</th><th>{t('admin.cards.expiry')}</th><th></th></tr></thead>
                     <tbody>
                         {!loading && pageCards.length === 0 && (
-                            <tr><td colSpan={7} style={{ textAlign: 'center', color: C.muted, padding: '2.5rem 0' }}>Aucune carte trouvée.</td></tr>
+                            <tr><td colSpan={7} style={{ textAlign: 'center', color: C.muted, padding: '2.5rem 0' }}>{t('admin.cards.no_card_found')}</td></tr>
                         )}
                         {pageCards.map(card => (
                             <tr key={card.id}>
@@ -101,7 +103,7 @@ export default function CardsPage() {
                                 <td style={{ textTransform: 'capitalize' }}>{card.type}</td>
                                 <td>{Number(card.plafond).toLocaleString('fr-FR')} MAD</td>
                                 <td><span className="ad-status-pill" style={{ background: STATUS_STYLES[card.statut].bg, color: STATUS_STYLES[card.statut].color }}>
-                                    {card.statut === 'active' ? 'Active' : card.statut === 'blocked' ? 'Bloquée' : 'Expirée'}
+                                    {card.statut === 'active' ? t('admin.dashboard.active_status') : card.statut === 'blocked' ? t('admin.dashboard.blocked_status') : t('admin.dashboard.expired_status')}
                                 </span></td>
                                 <td style={{ color: C.muted }}>{card.expiration ? new Date(card.expiration).toLocaleDateString('fr-FR') : '—'}</td>
                                 <td>
@@ -112,7 +114,7 @@ export default function CardsPage() {
                                         onClick={() => toggle(card)}
                                     >
                                         <Icon name={card.statut === 'active' ? 'lock' : 'unlock'} size={13} />
-                                        {busyId === card.id ? '...' : card.statut === 'active' ? 'Bloquer' : 'Débloquer'}
+                                        {busyId === card.id ? '...' : card.statut === 'active' ? t('admin.dashboard.block') : t('admin.dashboard.unblock')}
                                     </button>
                                 </td>
                             </tr>
@@ -123,7 +125,7 @@ export default function CardsPage() {
 
                 <div className="ad-pagination">
                     <span style={{ fontSize: 13.5, color: C.muted }}>
-                        Affichage de {filtered.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1} à {Math.min(page * PAGE_SIZE, filtered.length)} sur {filtered.length} cartes
+                        {t('common.showing', { from: filtered.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1, to: Math.min(page * PAGE_SIZE, filtered.length), total: filtered.length, label: t('admin.cards.cards_label') })}
                     </span>
                     <div style={{ display: 'flex', gap: 6 }}>
                         <button className="ad-page-btn" disabled={page === 1} onClick={() => setPage(p => Math.max(1, p - 1))}><Icon name="arrowLeft" size={14} color={C.text} /></button>

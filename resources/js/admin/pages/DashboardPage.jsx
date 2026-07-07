@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { C, fontTitle, Icon, StatCard, Sparkline, DonutChart, VerticalBarChart, initialsOf, formatDate, formatMoney, useApi, STATUS_STYLES, PAGE_SIZE } from '../theme'
+import { useLanguage } from '../../i18n/LanguageContext'
 
 const WEEK_LABELS = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
 
 export default function DashboardPage() {
     const { refreshBadge } = useOutletContext()
     const api = useApi()
+    const { t } = useLanguage()
 
     const [clients, setClients] = useState([])
     const [cards, setCards]     = useState([])
@@ -49,11 +51,11 @@ export default function DashboardPage() {
             if (cardsRes.status === 'fulfilled') setCards(cardsRes.value.data.data || cardsRes.value.data)
             if (alertsRes.status === 'fulfilled') setAlerts(alertsRes.value.data)
         } catch {
-            setErrorMsg("Impossible de charger les données depuis le serveur.")
+            setErrorMsg(t('admin.dashboard.load_error'))
         } finally {
             setLoading(false)
         }
-    }, [api])
+    }, [api, t])
 
     useEffect(() => { loadAll() }, [loadAll])
 
@@ -91,7 +93,7 @@ export default function DashboardPage() {
             await loadAll()
             refreshBadge()
         } catch {
-            setErrorMsg("Action impossible sur cette carte.")
+            setErrorMsg(t('admin.dashboard.action_error'))
         }
     }
 
@@ -99,19 +101,19 @@ export default function DashboardPage() {
         e.preventDefault()
         setIssueMsg(null)
         if (!formClientId) {
-            setIssueMsg({ type: 'error', text: 'Veuillez sélectionner un client.' })
+            setIssueMsg({ type: 'error', key: 'admin.dashboard.select_client_error' })
             return
         }
         setIssuing(true)
         try {
             await api.post('/cards', { user_id: formClientId, type: formType, plafond: Number(formPlafond) })
-            setIssueMsg({ type: 'success', text: 'Carte émise avec succès.' })
+            setIssueMsg({ type: 'success', key: 'admin.dashboard.issue_success' })
             setFormClientId('')
             setFormPlafond('5000')
             await loadAll()
             refreshBadge()
         } catch (err) {
-            setIssueMsg({ type: 'error', text: err.response?.data?.message || "Erreur lors de l'émission de la carte." })
+            setIssueMsg({ type: 'error', text: err.response?.data?.message, key: 'admin.dashboard.issue_error' })
         } finally {
             setIssuing(false)
         }
@@ -124,10 +126,10 @@ export default function DashboardPage() {
             <div className="ad-page-header">
                 <div>
                     <h1 style={{ fontFamily: fontTitle, fontSize: 24, fontWeight: 800, color: C.text, margin: 0 }}>
-                        Aperçu de la plateforme
+                        {t('admin.dashboard.title')}
                     </h1>
                     <p style={{ color: C.muted, fontSize: 14, margin: '4px 0 0' }}>
-                        Voici ce qui se passe sur votre plateforme aujourd'hui.
+                        {t('admin.dashboard.subtitle')}
                     </p>
                 </div>
             </div>
@@ -141,16 +143,16 @@ export default function DashboardPage() {
             <div className="ad-hero-grid">
                 <div className="ad-hero-stack">
                     <StatCard
-                        label="Total Clients"
+                        label={t('admin.dashboard.total_clients')}
                         value={loading ? '…' : clients.length}
-                        trend={{ dir: 'up', text: `${clients.length - clients.filter(c => c.cards_count === 0).length} actifs` }}
-                        caption={`${clients.filter(c => c.cards_count === 0).length} sans carte`}
+                        trend={{ dir: 'up', text: t('admin.dashboard.active_label', { count: clients.length - clients.filter(c => c.cards_count === 0).length }) }}
+                        caption={t('admin.dashboard.no_card_count', { count: clients.filter(c => c.cards_count === 0).length })}
                     />
                     <StatCard
-                        label="Total Cartes"
+                        label={t('admin.dashboard.total_cards')}
                         value={loading ? '…' : cards.length}
-                        trend={blockedCards > 0 ? { dir: 'down', text: `${blockedCards} bloquée(s)` } : { dir: 'up', text: 'RAS' }}
-                        caption={`${activeCards} active(s)`}
+                        trend={blockedCards > 0 ? { dir: 'down', text: t('admin.dashboard.blocked_count', { count: blockedCards }) } : { dir: 'up', text: t('admin.dashboard.rasa') }}
+                        caption={t('admin.dashboard.active_count', { count: activeCards })}
                     />
                 </div>
 
@@ -158,21 +160,21 @@ export default function DashboardPage() {
                     <div>
                         <div className="ad-hero-row">
                             <div>
-                                <div style={{ fontSize: 13, color: C.muted, fontWeight: 600 }}>Cartes actives</div>
+                                <div style={{ fontSize: 13, color: C.muted, fontWeight: 600 }}>{t('admin.dashboard.active_cards')}</div>
                                 <div style={{ fontSize: 28, fontWeight: 800, fontFamily: fontTitle, color: C.text, marginTop: 4 }}>{loading ? '…' : activeCards}</div>
                             </div>
                             <span className={`ad-stat-trend ${blockedCards > 0 ? 'down' : 'up'}`}>
                                 <Icon name={blockedCards > 0 ? 'arrowDown' : 'arrowUp'} size={10} color={blockedCards > 0 ? C.red : C.green} />
-                                {blockedCards > 0 ? `${blockedCards} bloquées` : 'Tout est actif'}
+                                {blockedCards > 0 ? t('admin.dashboard.blocked_count', { count: blockedCards }) : t('admin.dashboard.all_active')}
                             </span>
                         </div>
                     </div>
                     <div className="ad-hero-divider" />
                     <div className="ad-hero-row">
                         <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: 13, color: C.muted, fontWeight: 600 }}>Alertes fraude</div>
+                            <div style={{ fontSize: 13, color: C.muted, fontWeight: 600 }}>{t('admin.dashboard.fraud_alerts')}</div>
                             <div style={{ fontSize: 20, fontWeight: 800, fontFamily: fontTitle, color: C.text, marginTop: 4 }}>
-                                {loading ? '…' : alerts.length} <span style={{ fontSize: 12.5, color: C.muted, fontWeight: 600 }}>· {unreadAlerts} non lue(s)</span>
+                                {loading ? '…' : alerts.length} <span style={{ fontSize: 12.5, color: C.muted, fontWeight: 600 }}>· {t('admin.dashboard.unread_count', { count: unreadAlerts })}</span>
                             </div>
                         </div>
                         <div style={{ width: 90 }}><Sparkline color={C.teal} seed={4} /></div>
@@ -181,27 +183,27 @@ export default function DashboardPage() {
 
                 <div className="ad-hero-dark">
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: 13, opacity: 0.85, fontWeight: 600 }}>Solde plateforme</span>
+                        <span style={{ fontSize: 13, opacity: 0.85, fontWeight: 600 }}>{t('admin.dashboard.platform_balance')}</span>
                         <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <Icon name="shield" size={14} color="white" />
                         </div>
                     </div>
                     <div style={{ fontSize: 25, fontWeight: 800, fontFamily: fontTitle }}>{loading ? '…' : formatMoney(balance)}</div>
-                    <div style={{ fontSize: 12, opacity: 0.75 }}>Plafond cumulé de {cards.length} carte(s)</div>
+                    <div style={{ fontSize: 12, opacity: 0.75 }}>{t('admin.dashboard.cumulated_ceiling', { count: cards.length })}</div>
                 </div>
             </div>
 
             <div className="ad-grid-2" style={{ marginBottom: '1.25rem', alignItems: 'stretch' }}>
                 <div className="ad-panel" style={{ display: 'flex', flexDirection: 'column' }}>
-                    <h2 style={{ fontFamily: fontTitle, fontSize: 17, fontWeight: 800, color: C.text, margin: '0 0 1.2rem' }}>Répartition des cartes</h2>
+                    <h2 style={{ fontFamily: fontTitle, fontSize: 17, fontWeight: 800, color: C.text, margin: '0 0 1.2rem' }}>{t('admin.dashboard.card_distribution')}</h2>
                     <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
-                        <DonutChart data={cardsByType} centerLabel="cartes" />
+                        <DonutChart data={cardsByType} centerLabel={t('admin.dashboard.cards_label')} />
                     </div>
                 </div>
                 <div className="ad-panel" style={{ display: 'flex', flexDirection: 'column' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.2rem' }}>
-                        <h2 style={{ fontFamily: fontTitle, fontSize: 17, fontWeight: 800, color: C.text, margin: 0 }}>Cartes émises par jour</h2>
-                        <span className="ad-select" style={{ cursor: 'default', padding: '0.4rem 0.8rem', fontSize: 12.5 }}>Cette semaine</span>
+                        <h2 style={{ fontFamily: fontTitle, fontSize: 17, fontWeight: 800, color: C.text, margin: 0 }}>{t('admin.dashboard.cards_per_day')}</h2>
+                        <span className="ad-select" style={{ cursor: 'default', padding: '0.4rem 0.8rem', fontSize: 12.5 }}>{t('admin.dashboard.this_week')}</span>
                     </div>
                     <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end' }}>
                         <VerticalBarChart data={cardsByWeekday} color={C.teal} highlightMax height={170} />
@@ -212,29 +214,30 @@ export default function DashboardPage() {
             <div className="ad-content-grid" style={{ alignItems: 'stretch' }}>
                 <div className="ad-panel">
                     <h2 style={{ fontFamily: fontTitle, fontSize: 18, fontWeight: 800, color: C.text, margin: '0 0 1.1rem' }}>
-                        Gestion des clients
+                        {t('admin.dashboard.client_management')}
                     </h2>
                     <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                         <div className="ad-search">
                             <Icon name="search" size={16} />
-                            <input placeholder="Rechercher un client par nom ou email..." value={search} onChange={e => setSearch(e.target.value)} />
+                            <input placeholder={t('admin.dashboard.search_client')} value={search} onChange={e => setSearch(e.target.value)} />
                         </div>
                         <div className={`ad-filter-btn ${onlyWithCards ? 'on' : ''}`} onClick={() => setOnlyWithCards(v => !v)}>
-                            <Icon name="filter" size={15} color={onlyWithCards ? 'white' : C.muted} /> Avec cartes uniquement
+                            <Icon name="filter" size={15} color={onlyWithCards ? 'white' : C.muted} /> {t('admin.dashboard.only_with_cards')}
                         </div>
                     </div>
 
                     <div style={{ overflowX: 'auto' }}>
                     <table className="ad-table">
                         <thead>
-                            <tr><th>Client</th><th>Email</th><th>Cartes</th><th>Statut</th><th>Inscription</th><th></th></tr>
+                            <tr><th>{t('admin.dashboard.client')}</th><th>{t('common.email')}</th><th>{t('admin.dashboard.cards')}</th><th>{t('common.status')}</th><th>{t('admin.dashboard.registration')}</th><th></th></tr>
                         </thead>
                         <tbody>
                             {pageClients.length === 0 && !loading && (
-                                <tr><td colSpan={6} style={{ textAlign: 'center', color: C.muted, padding: '2rem 0' }}>Aucun client trouvé.</td></tr>
+                                <tr><td colSpan={6} style={{ textAlign: 'center', color: C.muted, padding: '2rem 0' }}>{t('admin.dashboard.no_client_found')}</td></tr>
                             )}
                             {pageClients.map(c => {
                                 const status = c.cards_count > 0 ? 'Actif' : 'Nouveau'
+                                const statusLabel = c.cards_count > 0 ? t('admin.clients.active') : t('admin.clients.new')
                                 const isExpanded = expandedId === c.id
                                 return (
                                 <React.Fragment key={c.id}>
@@ -251,17 +254,17 @@ export default function DashboardPage() {
                                     </td>
                                     <td style={{ color: C.muted }}>{c.email}</td>
                                     <td>{c.cards_count}</td>
-                                    <td><span className="ad-status-pill" style={{ background: STATUS_STYLES[status].bg, color: STATUS_STYLES[status].color }}>{status}</span></td>
+                                    <td><span className="ad-status-pill" style={{ background: STATUS_STYLES[status].bg, color: STATUS_STYLES[status].color }}>{statusLabel}</span></td>
                                     <td style={{ color: C.muted }}>{formatDate(c.created_at)}</td>
                                     <td style={{ position: 'relative' }} className="ad-row-menu">
                                         <button className="ad-icon-btn" onClick={() => setOpenMenuId(openMenuId === c.id ? null : c.id)}><Icon name="dots" /></button>
                                         {openMenuId === c.id && (
                                             <div className="ad-menu">
                                                 <button className="ad-menu-item" onClick={() => { setExpandedId(isExpanded ? null : c.id); setOpenMenuId(null) }}>
-                                                    <Icon name="card" size={15} /> {isExpanded ? 'Masquer les cartes' : 'Voir les cartes'}
+                                                    <Icon name="card" size={15} /> {isExpanded ? t('admin.dashboard.hide_cards') : t('admin.dashboard.view_cards')}
                                                 </button>
                                                 <button className="ad-menu-item" onClick={() => { setFormClientId(String(c.id)); setOpenMenuId(null) }}>
-                                                    <Icon name="check" size={15} /> Émettre une carte
+                                                    <Icon name="check" size={15} /> {t('admin.dashboard.issue_card_action')}
                                                 </button>
                                             </div>
                                         )}
@@ -271,7 +274,7 @@ export default function DashboardPage() {
                                     <tr>
                                         <td colSpan={6} style={{ background: '#F8FAFC', padding: '0.75rem 1rem' }}>
                                             {cardsOf(c.id).length === 0 ? (
-                                                <span style={{ color: C.muted, fontSize: 13.5 }}>Ce client n'a aucune carte.</span>
+                                                <span style={{ color: C.muted, fontSize: 13.5 }}>{t('admin.dashboard.no_card_for_client')}</span>
                                             ) : (
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                                                     {cardsOf(c.id).map(card => (
@@ -280,11 +283,11 @@ export default function DashboardPage() {
                                                             <span style={{ textTransform: 'capitalize' }}>{card.type}</span>
                                                             <span>{Number(card.plafond).toLocaleString('fr-FR')} MAD</span>
                                                             <span className="ad-status-pill" style={{ background: STATUS_STYLES[card.statut].bg, color: STATUS_STYLES[card.statut].color }}>
-                                                                {card.statut === 'active' ? 'Active' : card.statut === 'blocked' ? 'Bloquée' : 'Expirée'}
+                                                                {card.statut === 'active' ? t('admin.dashboard.active_status') : card.statut === 'blocked' ? t('admin.dashboard.blocked_status') : t('admin.dashboard.expired_status')}
                                                             </span>
                                                             <button className="ad-filter-btn" style={{ padding: '0.35rem 0.75rem', fontSize: 12.5 }} onClick={() => toggleCardBlock(card)}>
                                                                 <Icon name={card.statut === 'active' ? 'lock' : 'unlock'} size={13} />
-                                                                {card.statut === 'active' ? 'Bloquer' : 'Débloquer'}
+                                                                {card.statut === 'active' ? t('admin.dashboard.block') : t('admin.dashboard.unblock')}
                                                             </button>
                                                         </div>
                                                     ))}
@@ -301,7 +304,7 @@ export default function DashboardPage() {
 
                     <div className="ad-pagination">
                         <span style={{ fontSize: 13.5, color: C.muted }}>
-                            Affichage de {filteredClients.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1} à {Math.min(page * PAGE_SIZE, filteredClients.length)} sur {filteredClients.length} clients
+                            {t('common.showing', { from: filteredClients.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1, to: Math.min(page * PAGE_SIZE, filteredClients.length), total: filteredClients.length, label: t('admin.dashboard.clients_label') })}
                         </span>
                         <div style={{ display: 'flex', gap: 6 }}>
                             <button className="ad-page-btn" disabled={page === 1} onClick={() => setPage(p => Math.max(1, p - 1))}><Icon name="arrowLeft" size={14} color={C.text} /></button>
@@ -315,19 +318,19 @@ export default function DashboardPage() {
 
                 <div className="ad-panel" style={{ display: 'flex', flexDirection: 'column' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <h2 style={{ fontFamily: fontTitle, fontSize: 18, fontWeight: 800, color: C.text, margin: 0 }}>Émettre une carte</h2>
+                        <h2 style={{ fontFamily: fontTitle, fontSize: 18, fontWeight: 800, color: C.text, margin: 0 }}>{t('admin.dashboard.issue_card_title')}</h2>
                         <div style={{ width: 34, height: 34, borderRadius: 10, background: `${C.teal}1A`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <Icon name="card" color={C.tealDark} size={17} />
                         </div>
                     </div>
 
                     <form onSubmit={handleIssueCard} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                        <label className="ad-form-label">Sélectionner un client</label>
+                        <label className="ad-form-label">{t('admin.dashboard.select_client')}</label>
                         <div className="ad-client-picker" style={{ position: 'relative' }}>
                             <div className="ad-search" style={{ background: C.white }} onClick={() => setClientPickerOpen(true)}>
                                 <Icon name="search" size={15} />
                                 <input
-                                    placeholder="Rechercher ou choisir un client"
+                                    placeholder={t('admin.dashboard.search_or_pick_client')}
                                     value={clientPickerOpen ? clientQuery : (selectedClient ? selectedClient.name : '')}
                                     onFocus={() => setClientPickerOpen(true)}
                                     onChange={e => { setClientQuery(e.target.value); setFormClientId('') }}
@@ -337,12 +340,12 @@ export default function DashboardPage() {
                             {clientPickerOpen && (
                                 <div className="ad-menu" style={{ width: '100%', maxHeight: 220, overflowY: 'auto' }}>
                                     {clients.filter(c => c.name.toLowerCase().includes(clientQuery.toLowerCase())).length === 0 ? (
-                                        <div style={{ padding: '0.75rem 0.9rem', fontSize: 13.5, color: C.muted }}>Aucun client trouvé.</div>
+                                        <div style={{ padding: '0.75rem 0.9rem', fontSize: 13.5, color: C.muted }}>{t('admin.dashboard.no_client_found_short')}</div>
                                     ) : (
                                         clients.filter(c => c.name.toLowerCase().includes(clientQuery.toLowerCase())).map(c => (
                                             <div key={c.id} className="ad-picker-item" onClick={() => { setFormClientId(String(c.id)); setClientQuery(''); setClientPickerOpen(false) }}>
                                                 <span>{c.name}</span>
-                                                <span style={{ color: C.muted, fontSize: 12.5 }}>{c.cards_count} carte(s)</span>
+                                                <span style={{ color: C.muted, fontSize: 12.5 }}>{c.cards_count} {t('admin.dashboard.cards_label')}</span>
                                             </div>
                                         ))
                                     )}
@@ -350,23 +353,23 @@ export default function DashboardPage() {
                             )}
                         </div>
 
-                        <label className="ad-form-label">Type de carte</label>
+                        <label className="ad-form-label">{t('admin.dashboard.card_type')}</label>
                         <select className="ad-form-input" value={formType} onChange={e => setFormType(e.target.value)}>
                             <option value="visa">Visa</option>
                             <option value="mastercard">Mastercard</option>
                         </select>
 
-                        <label className="ad-form-label">Devise</label>
+                        <label className="ad-form-label">{t('admin.dashboard.currency')}</label>
                         <div className="ad-form-select-btn" style={{ color: C.muted, cursor: 'default' }}><span>MAD — Dirham Marocain</span></div>
 
-                        <label className="ad-form-label">Plafond (MAD)</label>
+                        <label className="ad-form-label">{t('admin.dashboard.limit')}</label>
                         <input className="ad-form-input" type="number" min="100" max="50000" step="50" value={formPlafond} onChange={e => setFormPlafond(e.target.value)} />
 
-                        <label className="ad-form-label">Expiration</label>
-                        <div className="ad-form-select-btn" style={{ color: C.muted, cursor: 'default' }}><span>3 ans (fixé par le système)</span></div>
+                        <label className="ad-form-label">{t('admin.dashboard.expiration')}</label>
+                        <div className="ad-form-select-btn" style={{ color: C.muted, cursor: 'default' }}><span>{t('admin.dashboard.expiration_fixed')}</span></div>
 
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1.1rem' }}>
-                            <span style={{ fontSize: 14, fontWeight: 600, color: C.text }}>Envoyer les infos de la carte par email</span>
+                            <span style={{ fontSize: 14, fontWeight: 600, color: C.text }}>{t('admin.dashboard.email_notify')}</span>
                             <button type="button" className={`ad-toggle ${notifyEmail ? 'on' : 'off'}`} onClick={() => setNotifyEmail(v => !v)} />
                         </div>
 
@@ -377,12 +380,12 @@ export default function DashboardPage() {
                                 color: issueMsg.type === 'success' ? C.green : C.red,
                             }}>
                                 <Icon name={issueMsg.type === 'success' ? 'check' : 'close'} size={15} color={issueMsg.type === 'success' ? C.green : C.red} />
-                                {issueMsg.text}
+                                {issueMsg.text || t(issueMsg.key)}
                             </div>
                         )}
 
                         <button className="ad-issue-btn" type="submit" disabled={issuing} style={{ marginTop: 'auto', paddingTop: '0.9rem' }}>
-                            {issuing ? 'Émission en cours...' : 'Émettre la carte'} <Icon name="arrowRight" color="white" size={17} />
+                            {issuing ? t('admin.dashboard.issuing') : t('admin.dashboard.issue_card_btn')} <Icon name="arrowRight" color="white" size={17} />
                         </button>
                     </form>
                 </div>

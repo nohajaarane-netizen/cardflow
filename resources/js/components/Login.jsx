@@ -1,21 +1,22 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import axios from 'axios'
 import bgImage from '../assets/cardflow-bg.png'
 import loginBg from '../assets/login-bg.png'
+import Logo from './Logo'
 
 const font      = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
 const fontTitle = "'Plus Jakarta Sans', 'Inter', sans-serif"
 
 const C = {
-    navy:    '#1A3A6B',
-    blue:    '#3B82F6',
-    blueDark:'#2563EB',
-    muted:   '#94A3B8',
-    border:  '#E8EDF5',
-    bg:      '#EEF2FF',
+    navy:    '#1B2340',
+    blue:    '#F4A341',
+    blueDark:'#E63946',
+    muted:   '#6B7280',
+    border:  '#E5E7EB',
+    bg:      '#F3F4F6',
     white:   '#FFFFFF',
-    text:    '#1E293B',
-    error:   '#EF4444',
+    text:    '#111111',
+    error:   '#E63946',
 }
 
 export default function Login() {
@@ -30,6 +31,37 @@ export default function Login() {
     const [loading,  setLoading]   = useState(false)
 
     const isSignup = mode === 'signup'
+
+    const imgWrapRef = useRef(null)
+    const cardRef = useRef(null)
+
+    const handleLeftMouseMove = (e) => {
+        const el = imgWrapRef.current
+        if (!el) return
+        const rect = e.currentTarget.getBoundingClientRect()
+        const px = (e.clientX - rect.left) / rect.width - 0.5
+        const py = (e.clientY - rect.top) / rect.height - 0.5
+        el.style.transform = `perspective(1000px) rotateY(${px * 10}deg) rotateX(${-py * 10}deg) translate(${px * 14}px, ${py * 14}px)`
+    }
+
+    const handleLeftMouseLeave = () => {
+        const el = imgWrapRef.current
+        if (el) el.style.transform = ''
+    }
+
+    const handleCardMouseMove = (e) => {
+        const el = cardRef.current
+        if (!el) return
+        const rect = e.currentTarget.getBoundingClientRect()
+        const px = (e.clientX - rect.left) / rect.width - 0.5
+        const py = (e.clientY - rect.top) / rect.height - 0.5
+        el.style.transform = `perspective(1400px) rotateY(${px * 2.5}deg) rotateX(${-py * 2.5}deg)`
+    }
+
+    const handleCardMouseLeave = () => {
+        const el = cardRef.current
+        if (el) el.style.transform = ''
+    }
 
     const switchMode = (next) => {
         setMode(next)
@@ -126,14 +158,16 @@ export default function Login() {
 
             .cf-img-wrap {
                 position: relative;
-                width: 115%;
-                height: 115%;
-                max-width: 1600px;
-                max-height: 1600px;
+                width: 195%;
+                height: 195%;
+                max-width: 2400px;
+                max-height: 2400px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 animation: cfFloat 6s ease-in-out infinite;
+                transition: transform 0.15s ease-out;
+                will-change: transform;
             }
 
             @keyframes cfFloat {
@@ -145,7 +179,7 @@ export default function Login() {
                 width: 100%;
                 height: 100%;
                 object-fit: contain;
-                filter: drop-shadow(0 25px 45px rgba(26,58,107,0.18));
+                filter: drop-shadow(0 25px 45px rgba(27,35,64,0.18));
             }
 
             .cf-card {
@@ -156,9 +190,15 @@ export default function Login() {
                 padding: 2.6rem 3.25rem;
                 width: 100%;
                 max-width: 540px;
-                box-shadow: 0 20px 60px rgba(26,58,107,0.10), 0 2px 8px rgba(26,58,107,0.06), inset 0 1px 0 rgba(255,255,255,0.6);
+                box-shadow: 0 20px 60px rgba(27,35,64,0.10), 0 2px 8px rgba(27,35,64,0.06), inset 0 1px 0 rgba(255,255,255,0.6);
                 border: 1px solid rgba(255,255,255,0.5);
                 animation: cfRise 0.7s cubic-bezier(0.16,1,0.3,1) both;
+                transition: transform 0.2s ease-out, box-shadow 0.3s ease;
+                will-change: transform;
+                transform-style: preserve-3d;
+            }
+            .cf-card:hover {
+                box-shadow: 0 26px 70px rgba(27,35,64,0.14), 0 4px 12px rgba(27,35,64,0.08), inset 0 1px 0 rgba(255,255,255,0.6);
             }
 
             .cf-right-wrap {
@@ -199,11 +239,11 @@ export default function Login() {
 
             .cf-icon {
                 width: 52px; height: 52px;
-                background: linear-gradient(135deg, #EEF2FF, #DCE4FF);
+                background: linear-gradient(135deg, #F3F4F6, #FCE9D5);
                 border-radius: 16px;
                 display: flex; align-items: center; justify-content: center;
                 margin-bottom: 1.5rem;
-                box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 4px 12px rgba(26,58,107,0.08);
+                box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 4px 12px rgba(27,35,64,0.08);
             }
 
             .cf-field { position: relative; }
@@ -226,7 +266,7 @@ export default function Login() {
             .cf-input:focus {
                 border-color: ${C.blue};
                 background: ${C.white};
-                box-shadow: 0 0 0 4px rgba(59,130,246,0.12);
+                box-shadow: 0 0 0 4px rgba(244,163,65,0.12);
                 transform: translateY(-1px);
             }
 
@@ -253,7 +293,7 @@ export default function Login() {
                 font-size: 15px;
                 font-weight: 700;
                 cursor: pointer;
-                box-shadow: 0 8px 24px rgba(26,58,107,0.28), 0 2px 6px rgba(26,58,107,0.15);
+                box-shadow: 0 8px 24px rgba(27,35,64,0.28), 0 2px 6px rgba(27,35,64,0.15);
                 transition: background-position 0.4s ease, transform 0.18s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s ease;
                 font-family: ${font};
                 display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -263,12 +303,12 @@ export default function Login() {
             .cf-btn:hover:not(:disabled) {
                 background-position: 100% 50%;
                 transform: translateY(-2px);
-                box-shadow: 0 14px 32px rgba(26,58,107,0.36), 0 4px 10px rgba(26,58,107,0.2);
+                box-shadow: 0 14px 32px rgba(27,35,64,0.36), 0 4px 10px rgba(27,35,64,0.2);
             }
 
             .cf-btn:active:not(:disabled) {
                 transform: translateY(0px) scale(0.99);
-                box-shadow: 0 6px 16px rgba(26,58,107,0.3);
+                box-shadow: 0 6px 16px rgba(27,35,64,0.3);
             }
 
             .cf-btn:disabled {
@@ -281,6 +321,24 @@ export default function Login() {
             .cf-signup:hover { opacity: 0.75; }
 
             .cf-check { accent-color: ${C.blue}; width: 16px; height: 16px; cursor: pointer; }
+
+            .cf-shake { animation: cfShake 0.4s ease; }
+            @keyframes cfShake {
+                10%, 90% { transform: translateX(-1px); }
+                20%, 80% { transform: translateX(2px); }
+                30%, 50%, 70% { transform: translateX(-4px); }
+                40%, 60% { transform: translateX(4px); }
+            }
+
+            .cf-spinner {
+                width: 16px; height: 16px; border-radius: 50%;
+                border: 2px solid rgba(255,255,255,0.35); border-top-color: white;
+                animation: cfSpin 0.7s linear infinite;
+            }
+            @keyframes cfSpin { to { transform: rotate(360deg); } }
+
+            .cf-checkbox-wrap { transition: transform 0.12s ease; }
+            .cf-checkbox-wrap:active { transform: scale(0.92); }
 
             @media (max-width: 980px) {
                 .cf-shell { flex-direction: column; }
@@ -299,7 +357,7 @@ export default function Login() {
         <div className="cf-shell">
 
             {/* ══════ GAUCHE — Illustration CardFlow ══════ */}
-            <div className="cf-col cf-left">
+            <div className="cf-col cf-left" onMouseMove={handleLeftMouseMove} onMouseLeave={handleLeftMouseLeave}>
                 <div className="cf-blob" style={{
                     top: '-140px', left: '-140px',
                     width: '520px', height: '520px',
@@ -308,15 +366,15 @@ export default function Login() {
                 <div className="cf-blob" style={{
                     bottom: '-100px', right: '-60px',
                     width: '380px', height: '380px',
-                    background: 'radial-gradient(circle, rgba(59,130,246,0.09), transparent 70%)',
+                    background: 'radial-gradient(circle, rgba(244,163,65,0.09), transparent 70%)',
                 }}/>
                 <div className="cf-blob" style={{
                     top: '40%', right: '10%',
                     width: '160px', height: '160px',
-                    background: 'radial-gradient(circle, rgba(26,58,107,0.06), transparent 70%)',
+                    background: 'radial-gradient(circle, rgba(27,35,64,0.06), transparent 70%)',
                 }}/>
 
-                <div className="cf-img-wrap">
+                <div className="cf-img-wrap" ref={imgWrapRef}>
                     <img src={bgImage} alt="CardFlow" className="cf-img" />
                 </div>
             </div>
@@ -324,15 +382,11 @@ export default function Login() {
             {/* ══════ DROITE — Formulaire ══════ */}
             <div className="cf-col cf-right" style={{ padding: '2rem' }}>
               <div className="cf-right-wrap">
-                <div className="cf-card">
+                <div className="cf-card" ref={cardRef} onMouseMove={handleCardMouseMove} onMouseLeave={handleCardMouseLeave} key={mode}>
 
                     {/* Icône cadenas */}
-                    <div className="cf-icon cf-fade cf-d1">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                            <rect x="3" y="11" width="18" height="11" rx="3" stroke={C.navy} strokeWidth="1.8"/>
-                            <path d="M7 11V7a5 5 0 0110 0v4" stroke={C.navy} strokeWidth="1.8" strokeLinecap="round"/>
-                            <circle cx="12" cy="16.5" r="1.5" fill={C.navy}/>
-                        </svg>
+                    <div className="cf-fade cf-d1" style={{ marginBottom: '1.5rem' }}>
+                        <Logo size={38} color={C.navy} />
                     </div>
 
                     {/* Titre */}
@@ -475,7 +529,7 @@ export default function Login() {
                         {/* Se souvenir + Mot de passe oublié (connexion uniquement) */}
                         {!isSignup && (
                             <div className="cf-fade cf-d5" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                                <label className="cf-checkbox-wrap" style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                                     <input
                                         type="checkbox"
                                         checked={remember}
@@ -492,7 +546,7 @@ export default function Login() {
 
                         {/* Erreur */}
                         {error && (
-                            <div style={{
+                            <div key={error} className="cf-shake" style={{
                                 background: '#FEF2F2', border: '1px solid #FECACA',
                                 borderRadius: '10px', padding: '0.7rem 1rem',
                                 fontSize: '15px', color: C.error,
@@ -503,6 +557,7 @@ export default function Login() {
 
                         {/* Bouton */}
                         <button type="submit" disabled={loading} className="cf-btn cf-fade cf-d6">
+                            {loading && <span className="cf-spinner" />}
                             {loading
                                 ? (isSignup ? 'Création...' : 'Connexion...')
                                 : (isSignup ? 'Créer mon compte' : 'Se connecter')}

@@ -4,25 +4,25 @@ import axios from 'axios'
 export const font      = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
 export const fontTitle = "'Plus Jakarta Sans', 'Inter', sans-serif"
 
-/* Palette reprise du modèle Bankio : fond crème chaud, accent vert sapin, texte anthracite chaud */
+/* Palette HPS : navy sombre + accent rouge-orange (trait du logo), fond neutre clair */
 export const C = {
-    navy:     '#0B3B36',
-    blue:     '#2F6F63',
-    blueDark: '#2563EB',
-    teal:     '#12655C',
-    tealDark: '#0B3B36',
-    slate:    '#3E5C74',
+    navy:     '#1B2340',
+    blue:     '#F4A341',
+    blueDark: '#E63946',
+    teal:     '#F4A341',
+    tealDark: '#1B2340',
+    slate:    '#6B7280',
     purple:   '#8B5CF6',
-    muted:    '#93908A',
-    border:   '#ECE7DC',
-    bg:       '#F3F0E8',
+    muted:    '#6B7280',
+    border:   '#E5E7EB',
+    bg:       '#F3F4F6',
     white:    '#FFFFFF',
-    text:     '#23261F',
+    text:     '#111111',
     green:    '#1E9E5A',
     greenBg:  '#E1F6E8',
-    red:      '#DC4444',
+    red:      '#E63946',
     redBg:    '#FCE7E7',
-    amber:    '#C2860B',
+    amber:    '#B8860B',
     amberBg:  '#FBF0DA',
 }
 
@@ -333,15 +333,15 @@ export const sharedCss = `
     .ad-main { flex: 1; padding: 1.75rem 2.25rem; min-width: 0; }
     .ad-topbar {
         display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.75rem; gap: 1.5rem;
-        flex-wrap: wrap; background: ${C.white}; border: 1px solid ${C.border}; border-radius: 20px; padding: 1.1rem 1.4rem;
+        flex-wrap: wrap; background: ${C.white}; border: 1px solid ${C.border}; border-radius: 20px; padding: 1.6rem 1.8rem;
     }
     .ad-avatar {
-        width: 40px; height: 40px; border-radius: 50%; background: ${C.navy};
+        width: 44px; height: 44px; border-radius: 50%; background: ${C.navy};
         display: flex; align-items: center; justify-content: center; color: ${C.white};
-        font-weight: 700; font-size: 14px; cursor: pointer; border: none; flex-shrink: 0;
+        font-weight: 700; font-size: 15px; cursor: pointer; border: none; flex-shrink: 0;
     }
     .ad-bell {
-        width: 40px; height: 40px; border-radius: 50%; border: 1px solid ${C.border};
+        width: 44px; height: 44px; border-radius: 50%; border: 1px solid ${C.border};
         display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer;
         background: ${C.white}; text-decoration: none;
     }

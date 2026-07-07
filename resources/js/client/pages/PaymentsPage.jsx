@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { C, fontTitle, Icon, formatDate, formatMoney, useApi, STATUS_STYLES, PAGE_SIZE } from '../../admin/theme'
+import { useLanguage } from '../../i18n/LanguageContext'
 
 export default function PaymentsPage() {
     const api = useApi()
+    const { t } = useLanguage()
     const [cards, setCards] = useState([])
     const [tx, setTx] = useState([])
     const [loading, setLoading] = useState(true)
@@ -45,9 +47,9 @@ export default function PaymentsPage() {
             const res = await api.post('/payment/initiate', { card_id: cardId, montant: Number(amount), marchand: merchant })
             setCacheKey(res.data.cache_key)
             setStep('otp')
-            setMsg({ type: 'success', text: res.data.message || 'Un code OTP a été envoyé.' })
+            setMsg({ type: 'success', text: res.data.message, key: 'client.payments.otp_sent' })
         } catch (err) {
-            setMsg({ type: 'error', text: err.response?.data?.message || "Impossible d'initier le paiement." })
+            setMsg({ type: 'error', text: err.response?.data?.message, key: 'client.payments.initiate_error' })
         } finally {
             setBusy(false)
         }
@@ -59,14 +61,14 @@ export default function PaymentsPage() {
         setBusy(true)
         try {
             await api.post('/payment/confirm', { cache_key: cacheKey, otp })
-            setMsg({ type: 'success', text: 'Paiement confirmé avec succès.' })
+            setMsg({ type: 'success', key: 'client.payments.confirm_success' })
             setStep('form')
             setAmount('')
             setMerchant('')
             setOtp('')
             await load()
         } catch (err) {
-            setMsg({ type: 'error', text: err.response?.data?.message || 'Code OTP invalide.' })
+            setMsg({ type: 'error', text: err.response?.data?.message, key: 'client.payments.otp_invalid' })
         } finally {
             setBusy(false)
         }
@@ -76,30 +78,30 @@ export default function PaymentsPage() {
         <>
             <div className="ad-page-header">
                 <div>
-                    <h1 style={{ fontFamily: fontTitle, fontSize: 26, fontWeight: 800, color: C.text, margin: 0 }}>Payments</h1>
-                    <p style={{ color: C.muted, fontSize: 14, margin: '4px 0 0' }}>Pay securely with 3D Secure verification.</p>
+                    <h1 style={{ fontFamily: fontTitle, fontSize: 26, fontWeight: 800, color: C.text, margin: 0 }}>{t('client.payments.title')}</h1>
+                    <p style={{ color: C.muted, fontSize: 14, margin: '4px 0 0' }}>{t('client.payments.subtitle')}</p>
                 </div>
             </div>
 
             <div className="ad-content-grid" style={{ alignItems: 'stretch' }}>
                 <div className="ad-panel" style={{ display: 'flex', flexDirection: 'column' }}>
-                    <h2 style={{ fontFamily: fontTitle, fontSize: 17, fontWeight: 800, color: C.text, margin: '0 0 1.1rem' }}>Payment History</h2>
+                    <h2 style={{ fontFamily: fontTitle, fontSize: 17, fontWeight: 800, color: C.text, margin: '0 0 1.1rem' }}>{t('client.payments.history')}</h2>
                     <div style={{ overflowX: 'auto' }}>
                     <table className="ad-table">
-                        <thead><tr><th>Merchant</th><th>Card</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+                        <thead><tr><th>{t('client.payments.merchant')}</th><th>{t('client.payments.card')}</th><th>{t('common.amount')}</th><th>{t('common.status')}</th><th>{t('common.date')}</th></tr></thead>
                         <tbody>
                             {!loading && pageTx.length === 0 && (
-                                <tr><td colSpan={5} style={{ textAlign: 'center', color: C.muted, padding: '2rem 0' }}>Aucun paiement pour le moment.</td></tr>
+                                <tr><td colSpan={5} style={{ textAlign: 'center', color: C.muted, padding: '2rem 0' }}>{t('client.payments.no_payment')}</td></tr>
                             )}
-                            {pageTx.map(t => (
-                                <tr key={t.id}>
-                                    <td style={{ fontWeight: 600 }}>{t.marchand}</td>
-                                    <td style={{ fontFamily: 'monospace', color: C.muted }}>{t.card?.pan}</td>
-                                    <td>{formatMoney(t.montant)}</td>
-                                    <td><span className="ad-status-pill" style={{ background: STATUS_STYLES[t.statut]?.bg, color: STATUS_STYLES[t.statut]?.color }}>
-                                        {t.statut === 'accepted' ? 'Accepted' : 'Refused'}
+                            {pageTx.map(tx2 => (
+                                <tr key={tx2.id}>
+                                    <td style={{ fontWeight: 600 }}>{tx2.marchand}</td>
+                                    <td style={{ fontFamily: 'monospace', color: C.muted }}>{tx2.card?.pan}</td>
+                                    <td>{formatMoney(tx2.montant)}</td>
+                                    <td><span className="ad-status-pill" style={{ background: STATUS_STYLES[tx2.statut]?.bg, color: STATUS_STYLES[tx2.statut]?.color }}>
+                                        {tx2.statut === 'accepted' ? t('client.payments.accepted') : t('client.payments.refused')}
                                     </span></td>
-                                    <td style={{ color: C.muted }}>{formatDate(t.created_at)}</td>
+                                    <td style={{ color: C.muted }}>{formatDate(tx2.created_at)}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -108,7 +110,7 @@ export default function PaymentsPage() {
 
                     <div className="ad-pagination">
                         <span style={{ fontSize: 13.5, color: C.muted }}>
-                            Showing {tx.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1} to {Math.min(page * PAGE_SIZE, tx.length)} of {tx.length} payments
+                            {t('common.showing', { from: tx.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1, to: Math.min(page * PAGE_SIZE, tx.length), total: tx.length, label: t('client.payments.payments_label') })}
                         </span>
                         <div style={{ display: 'flex', gap: 6 }}>
                             <button className="ad-page-btn" disabled={page === 1} onClick={() => setPage(p => Math.max(1, p - 1))}><Icon name="arrowLeft" size={14} color={C.text} /></button>
@@ -122,21 +124,26 @@ export default function PaymentsPage() {
 
                 <div className="ad-panel" style={{ display: 'flex', flexDirection: 'column' }}>
                     <h2 style={{ fontFamily: fontTitle, fontSize: 17, fontWeight: 800, color: C.text, margin: '0 0 1.1rem' }}>
-                        {step === 'form' ? 'New Payment' : 'Verify with OTP'}
+                        {step === 'form' ? t('client.payments.new_payment') : t('client.payments.verify_otp')}
                     </h2>
 
                     {step === 'form' ? (
                         <form onSubmit={handleInitiate} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                            <label className="ad-form-label" style={{ marginTop: 0 }}>Card</label>
+                            <label className="ad-form-label" style={{ marginTop: 0 }}>{t('client.payments.card')}</label>
                             <select className="ad-form-input" value={cardId} onChange={e => setCardId(e.target.value)} required>
                                 {cards.map(c => <option key={c.id} value={c.id}>{c.pan} — {c.type}</option>)}
                             </select>
 
-                            <label className="ad-form-label">Merchant</label>
-                            <input className="ad-form-input" value={merchant} onChange={e => setMerchant(e.target.value)} placeholder="Ex : Marjane Market" required />
+                            <label className="ad-form-label">{t('client.payments.merchant')}</label>
+                            <input className="ad-form-input" value={merchant} onChange={e => setMerchant(e.target.value)} placeholder={t('client.payments.merchant_placeholder')} required />
 
-                            <label className="ad-form-label">Amount (MAD)</label>
+                            <label className="ad-form-label">{t('client.payments.amount_mad')}</label>
                             <input className="ad-form-input" type="number" min="1" value={amount} onChange={e => setAmount(e.target.value)} required />
+
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, color: C.muted, textAlign: 'center', padding: '1rem 0' }}>
+                                <Icon name="shield" size={26} color={C.border} />
+                                <span style={{ fontSize: 12.5, maxWidth: 240 }}>{t('client.dashboard.secure_note')}</span>
+                            </div>
 
                             {msg && (
                                 <div className="ad-alert-banner" style={{
@@ -145,18 +152,18 @@ export default function PaymentsPage() {
                                     color: msg.type === 'success' ? C.green : C.red,
                                 }}>
                                     <Icon name={msg.type === 'success' ? 'check' : 'close'} size={15} color={msg.type === 'success' ? C.green : C.red} />
-                                    {msg.text}
+                                    {msg.text || t(msg.key)}
                                 </div>
                             )}
 
                             <button className="ad-issue-btn" type="submit" disabled={busy || !cards.length} style={{ marginTop: 'auto', paddingTop: '0.9rem' }}>
-                                {busy ? 'Processing...' : 'Continue'} <Icon name="arrowRight" color="white" size={17} />
+                                {busy ? t('client.payments.processing') : t('client.payments.continue')} <Icon name="arrowRight" color="white" size={17} />
                             </button>
                         </form>
                     ) : (
                         <form onSubmit={handleConfirm} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                            <p style={{ fontSize: 13.5, color: C.muted, marginTop: 0 }}>Entrez le code à 6 chiffres reçu pour confirmer ce paiement.</p>
-                            <label className="ad-form-label" style={{ marginTop: 0 }}>OTP Code</label>
+                            <p style={{ fontSize: 13.5, color: C.muted, marginTop: 0 }}>{t('client.payments.otp_instructions')}</p>
+                            <label className="ad-form-label" style={{ marginTop: 0 }}>{t('client.payments.otp_code')}</label>
                             <input className="ad-form-input" value={otp} onChange={e => setOtp(e.target.value)} maxLength={6} required style={{ letterSpacing: 6, textAlign: 'center', fontSize: 20, fontWeight: 700 }} />
 
                             {msg && (
@@ -166,16 +173,16 @@ export default function PaymentsPage() {
                                     color: msg.type === 'success' ? C.green : C.red,
                                 }}>
                                     <Icon name={msg.type === 'success' ? 'check' : 'close'} size={15} color={msg.type === 'success' ? C.green : C.red} />
-                                    {msg.text}
+                                    {msg.text || t(msg.key)}
                                 </div>
                             )}
 
                             <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 10, paddingTop: '0.9rem' }}>
                                 <button className="ad-issue-btn" type="submit" disabled={busy} style={{ marginTop: 0 }}>
-                                    {busy ? 'Verifying...' : 'Confirm Payment'} <Icon name="check" color="white" size={17} />
+                                    {busy ? t('client.payments.verifying') : t('client.payments.confirm_payment')} <Icon name="check" color="white" size={17} />
                                 </button>
                                 <button type="button" className="ad-btn-outline" style={{ width: '100%', justifyContent: 'center' }} onClick={() => { setStep('form'); setMsg(null) }}>
-                                    Cancel
+                                    {t('client.payments.cancel')}
                                 </button>
                             </div>
                         </form>

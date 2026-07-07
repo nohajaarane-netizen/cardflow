@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { C, fontTitle, Icon, initialsOf, formatDate, useApi, STATUS_STYLES, PAGE_SIZE } from '../theme'
+import { useLanguage } from '../../i18n/LanguageContext'
 
 export default function UsersPage() {
     const api = useApi()
+    const { t } = useLanguage()
     const [users, setUsers] = useState([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
@@ -37,8 +39,8 @@ export default function UsersPage() {
         <>
             <div className="ad-page-header">
                 <div>
-                    <h1 style={{ fontFamily: fontTitle, fontSize: 26, fontWeight: 800, color: C.text, margin: 0 }}>Utilisateurs</h1>
-                    <p style={{ color: C.muted, fontSize: 14, margin: '4px 0 0' }}>{adminCount} administrateur(s) · {clientCount} client(s)</p>
+                    <h1 style={{ fontFamily: fontTitle, fontSize: 26, fontWeight: 800, color: C.text, margin: 0 }}>{t('admin.users.title')}</h1>
+                    <p style={{ color: C.muted, fontSize: 14, margin: '4px 0 0' }}>{t('admin.users.subtitle', { admins: adminCount, clients: clientCount })}</p>
                 </div>
             </div>
 
@@ -46,22 +48,22 @@ export default function UsersPage() {
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                     <div className="ad-search">
                         <Icon name="search" size={16} />
-                        <input placeholder="Rechercher un utilisateur par nom ou email..." value={search} onChange={e => setSearch(e.target.value)} />
+                        <input placeholder={t('admin.users.search')} value={search} onChange={e => setSearch(e.target.value)} />
                     </div>
                     <select className="ad-select" value={roleFilter} onChange={e => setRoleFilter(e.target.value)}>
-                        <option value="all">Tous les rôles</option>
-                        <option value="admin">Administrateurs</option>
-                        <option value="client">Clients</option>
+                        <option value="all">{t('admin.users.all_roles')}</option>
+                        <option value="admin">{t('admin.users.admins')}</option>
+                        <option value="client">{t('admin.users.clients')}</option>
                     </select>
-                    <button className="ad-btn-outline" style={{ marginLeft: 'auto' }} onClick={load}><Icon name="refresh" size={15} /> Actualiser</button>
+                    <button className="ad-btn-outline" style={{ marginLeft: 'auto' }} onClick={load}><Icon name="refresh" size={15} /> {t('common.refresh')}</button>
                 </div>
 
                 <div style={{ overflowX: 'auto' }}>
                 <table className="ad-table">
-                    <thead><tr><th>Utilisateur</th><th>Email</th><th>Rôle</th><th>Cartes</th><th>Inscription</th></tr></thead>
+                    <thead><tr><th>{t('admin.users.user')}</th><th>{t('common.email')}</th><th>{t('admin.users.role')}</th><th>{t('admin.dashboard.cards')}</th><th>{t('admin.dashboard.registration')}</th></tr></thead>
                     <tbody>
                         {!loading && pageUsers.length === 0 && (
-                            <tr><td colSpan={5} style={{ textAlign: 'center', color: C.muted, padding: '2.5rem 0' }}>Aucun utilisateur trouvé.</td></tr>
+                            <tr><td colSpan={5} style={{ textAlign: 'center', color: C.muted, padding: '2.5rem 0' }}>{t('admin.users.no_user_found')}</td></tr>
                         )}
                         {pageUsers.map(u => (
                             <tr key={u.id}>
@@ -77,7 +79,7 @@ export default function UsersPage() {
                                     </div>
                                 </td>
                                 <td style={{ color: C.muted }}>{u.email}</td>
-                                <td><span className="ad-status-pill" style={{ background: STATUS_STYLES[u.role].bg, color: STATUS_STYLES[u.role].color }}>{u.role === 'admin' ? 'Admin' : 'Client'}</span></td>
+                                <td><span className="ad-status-pill" style={{ background: STATUS_STYLES[u.role].bg, color: STATUS_STYLES[u.role].color }}>{u.role === 'admin' ? t('admin.users.admin_role') : t('admin.users.client_role')}</span></td>
                                 <td>{u.cards_count}</td>
                                 <td style={{ color: C.muted }}>{formatDate(u.created_at)}</td>
                             </tr>
@@ -88,7 +90,7 @@ export default function UsersPage() {
 
                 <div className="ad-pagination">
                     <span style={{ fontSize: 13.5, color: C.muted }}>
-                        Affichage de {filtered.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1} à {Math.min(page * PAGE_SIZE, filtered.length)} sur {filtered.length} utilisateurs
+                        {t('common.showing', { from: filtered.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1, to: Math.min(page * PAGE_SIZE, filtered.length), total: filtered.length, label: t('admin.users.users_label') })}
                     </span>
                     <div style={{ display: 'flex', gap: 6 }}>
                         <button className="ad-page-btn" disabled={page === 1} onClick={() => setPage(p => Math.max(1, p - 1))}><Icon name="arrowLeft" size={14} color={C.text} /></button>

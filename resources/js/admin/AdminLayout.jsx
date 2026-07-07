@@ -1,26 +1,30 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { C, fontTitle, Icon, initialsOf, useApi, sharedCss } from './theme'
+import { useLanguage } from '../i18n/LanguageContext'
+import LanguageSwitch from '../i18n/LanguageSwitch'
+import Logo from '../components/Logo'
 
 const MAIN_NAV = [
-    { to: '/admin/dashboard',    label: 'Tableau de bord', icon: 'home' },
-    { to: '/admin/clients',      label: 'Clients',         icon: 'users' },
-    { to: '/admin/cards',        label: 'Cartes',          icon: 'card' },
-    { to: '/admin/transactions', label: 'Transactions',    icon: 'swap' },
-    { to: '/admin/disputes',     label: 'Litiges',         icon: 'shield' },
-    { to: '/admin/analytics',    label: 'Analytique',      icon: 'chart' },
+    { to: '/admin/dashboard',    key: 'nav.admin.dashboard',    icon: 'home' },
+    { to: '/admin/clients',      key: 'nav.admin.clients',      icon: 'users' },
+    { to: '/admin/cards',        key: 'nav.admin.cards',        icon: 'card' },
+    { to: '/admin/transactions', key: 'nav.admin.transactions', icon: 'swap' },
+    { to: '/admin/disputes',     key: 'nav.admin.disputes',     icon: 'shield' },
+    { to: '/admin/analytics',    key: 'nav.admin.analytics',    icon: 'chart' },
 ]
 
 const OTHER_NAV = [
-    { to: '/admin/reports',  label: 'Rapports',    icon: 'file' },
-    { to: '/admin/settings', label: 'Paramètres',  icon: 'gear' },
-    { to: '/admin/users',    label: 'Utilisateurs', icon: 'user' },
-    { to: '/admin/support',  label: 'Support',     icon: 'help' },
+    { to: '/admin/reports',  key: 'nav.admin.reports',  icon: 'file' },
+    { to: '/admin/settings', key: 'nav.admin.settings', icon: 'gear' },
+    { to: '/admin/users',    key: 'nav.admin.users',    icon: 'user' },
+    { to: '/admin/support',  key: 'nav.admin.support',  icon: 'help' },
 ]
 
 export default function AdminLayout() {
     const navigate = useNavigate()
     const api = useApi()
+    const { t } = useLanguage()
     const [admin] = useState(() => JSON.parse(localStorage.getItem('user') || '{}'))
     const [unreadAlerts, setUnreadAlerts] = useState(0)
 
@@ -44,7 +48,7 @@ export default function AdminLayout() {
             {({ isActive }) => (
                 <>
                     <Icon name={item.icon} color={isActive ? 'white' : C.muted} />
-                    {item.label}
+                    {t(item.key)}
                     {item.to === '/admin/disputes' && unreadAlerts > 0 && (
                         <span style={{
                             marginLeft: 'auto', background: isActive ? 'rgba(255,255,255,0.25)' : C.red,
@@ -62,26 +66,15 @@ export default function AdminLayout() {
         <div className="ad-shell">
             <aside className="ad-sidebar">
                 <div className="ad-logo">
-                    <div style={{
-                        width: 38, height: 38, borderRadius: 11,
-                        background: C.navy,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
-                            <rect x="2" y="6" width="15" height="10" rx="2.5" stroke="white" strokeWidth="1.8"/>
-                            <rect x="7" y="9" width="15" height="10" rx="2.5" fill={C.teal} stroke="white" strokeWidth="1.8"/>
-                        </svg>
-                    </div>
-                    <div style={{ fontFamily: fontTitle, fontWeight: 800, fontSize: 18, color: C.text, lineHeight: 1.1 }}>CardFlow</div>
-                    <Icon name="chevron" size={14} style={{ marginLeft: 'auto' }} />
+                    <Logo size={30} color={C.text} />
                 </div>
 
-                <div className="ad-nav-group-label">Menu principal</div>
+                <div className="ad-nav-group-label">{t('nav.group_main')}</div>
                 <nav className="ad-nav" style={{ flex: 'none' }}>
                     {MAIN_NAV.map(renderNavItem)}
                 </nav>
 
-                <div className="ad-nav-group-label">Autres</div>
+                <div className="ad-nav-group-label">{t('nav.group_other')}</div>
                 <nav className="ad-nav">
                     {OTHER_NAV.map(renderNavItem)}
                 </nav>
@@ -90,9 +83,9 @@ export default function AdminLayout() {
                     <div className="ad-avatar">{initialsOf(admin.name) || 'AD'}</div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 14, fontWeight: 700, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{admin.name || 'Administrateur'}</div>
-                        <div style={{ fontSize: 12, color: C.muted }}>Super Administrateur</div>
+                        <div style={{ fontSize: 12, color: C.muted }}>{t('layout.admin_role')}</div>
                     </div>
-                    <button className="ad-icon-btn" onClick={handleLogout} title="Se déconnecter">
+                    <button className="ad-icon-btn" onClick={handleLogout} title={t('common.logout')}>
                         <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
                             <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" stroke={C.muted} strokeWidth="1.8" strokeLinecap="round"/>
                             <path d="M16 17l5-5-5-5M21 12H9" stroke={C.muted} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
@@ -104,22 +97,23 @@ export default function AdminLayout() {
             <main className="ad-main">
                 <div className="ad-topbar">
                     <div>
-                        <div style={{ fontFamily: fontTitle, fontSize: 19, fontWeight: 800, color: C.text }}>
-                            Bienvenue, {(admin.name || 'Admin').split(' ')[0]} !
+                        <div style={{ fontFamily: fontTitle, fontSize: 24, fontWeight: 800, color: C.text }}>
+                            {t('layout.admin_greeting', { name: (admin.name || 'Admin').split(' ')[0] })}
                         </div>
-                        <div style={{ fontSize: 13, color: C.muted, marginTop: 2 }}>
-                            Gérez votre plateforme facilement grâce à des données en temps réel.
+                        <div style={{ fontSize: 15, color: C.muted, marginTop: 4 }}>
+                            {t('layout.admin_subtitle')}
                         </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <button className="ad-bell" onClick={refreshBadge} title="Actualiser">
+                        <LanguageSwitch />
+                        <button className="ad-bell" onClick={refreshBadge} title={t('common.refresh')}>
                             <Icon name="refresh" color={C.text} />
                         </button>
-                        <NavLink to="/admin/disputes" className="ad-bell" title={`${unreadAlerts} alerte(s) non lue(s)`}>
+                        <NavLink to="/admin/disputes" className="ad-bell" title={t('admin.disputes.unread_needs_attention', { count: unreadAlerts })}>
                             <Icon name="bell" color={C.text} />
                             {unreadAlerts > 0 && <div className="ad-badge">{unreadAlerts}</div>}
                         </NavLink>
-                        <button className="ad-icon-btn" style={{ display: 'flex', alignItems: 'center', gap: 8 }} onClick={handleLogout} title="Se déconnecter">
+                        <button className="ad-icon-btn" style={{ display: 'flex', alignItems: 'center', gap: 8 }} onClick={handleLogout} title={t('common.logout')}>
                             <div className="ad-avatar">{initialsOf(admin.name) || 'AD'}</div>
                             <Icon name="chevron" size={16} />
                         </button>

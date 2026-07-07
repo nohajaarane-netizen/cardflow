@@ -21,6 +21,7 @@ import ClientBeneficiariesPage from './client/pages/BeneficiariesPage'
 import ClientAnalyticsPage from './client/pages/AnalyticsPage'
 import ClientSettingsPage from './client/pages/SettingsPage'
 import ClientSupportPage from './client/pages/SupportPage'
+import { LanguageProvider } from './i18n/LanguageContext'
 
 function RequireAdmin({ children }) {
     const token = localStorage.getItem('token')
@@ -44,6 +45,7 @@ function RequireClient({ children }) {
 
 function App() {
     return (
+        <LanguageProvider>
         <BrowserRouter>
             <Routes>
                 <Route path="/" element={<Login />} />
@@ -87,6 +89,7 @@ function App() {
                 <Route path="*" element={<Navigate to="/" />} />
             </Routes>
         </BrowserRouter>
+        </LanguageProvider>
     )
 }
 

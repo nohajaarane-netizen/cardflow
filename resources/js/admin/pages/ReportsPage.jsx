@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { C, fontTitle, Icon, useApi, formatMoney, txDisplayStatus } from '../theme'
+import { useLanguage } from '../../i18n/LanguageContext'
 
 function toCsv(rows, headers) {
     const esc = v => `"${String(v ?? '').replace(/"/g, '""')}"`
@@ -22,6 +23,7 @@ function download(filename, content) {
 
 export default function ReportsPage() {
     const api = useApi()
+    const { t } = useLanguage()
     const [clients, setClients] = useState([])
     const [cards, setCards] = useState([])
     const [tx, setTx] = useState([])
@@ -45,40 +47,40 @@ export default function ReportsPage() {
     const exportClients = () => {
         const csv = toCsv(clients.map(c => [c.id, c.name, c.email, c.cards_count, c.created_at]), ['ID', 'Nom', 'Email', 'Nb cartes', 'Inscription'])
         download('clients_cardflow.csv', csv)
-        setLastExport('Clients')
+        setLastExport(t('admin.users.clients'))
     }
     const exportCards = () => {
         const csv = toCsv(cards.map(c => [c.id, c.user?.name, c.pan, c.type, c.statut, c.plafond, c.expiration]), ['ID', 'Titulaire', 'Numéro', 'Type', 'Statut', 'Plafond', 'Expiration'])
         download('cartes_cardflow.csv', csv)
-        setLastExport('Cartes')
+        setLastExport(t('admin.cards.title'))
     }
     const exportTx = () => {
-        const csv = toCsv(tx.map(t => [t.id, t.client?.name, t.marchand, t.montant, txDisplayStatus(t), t.code_reponse, t.otp_verifie ? 'oui' : 'non', t.created_at]), ['ID', 'Client', 'Marchand', 'Montant', 'Statut', 'Code réponse', 'OTP vérifié', 'Date'])
+        const csv = toCsv(tx.map(t2 => [t2.id, t2.client?.name, t2.marchand, t2.montant, txDisplayStatus(t2), t2.code_reponse, t2.otp_verifie ? 'oui' : 'non', t2.created_at]), ['ID', 'Client', 'Marchand', 'Montant', 'Statut', 'Code réponse', 'OTP vérifié', 'Date'])
         download('transactions_cardflow.csv', csv)
-        setLastExport('Transactions')
+        setLastExport(t('admin.transactions.title'))
     }
 
-    const totalVolume = tx.filter(t => t.statut === 'accepted').reduce((s, t) => s + Number(t.montant), 0)
+    const totalVolume = tx.filter(t2 => t2.statut === 'accepted').reduce((s, t2) => s + Number(t2.montant), 0)
 
     const REPORTS = [
-        { key: 'clients', title: 'Rapport clients', desc: `${clients.length} clients — export complet (nom, email, cartes, date d'inscription).`, icon: 'users', color: C.navy, action: exportClients },
-        { key: 'cards', title: 'Rapport cartes', desc: `${cards.length} cartes — export complet (titulaire, type, statut, plafond).`, icon: 'card', color: C.slate, action: exportCards },
-        { key: 'tx', title: 'Rapport transactions', desc: `${tx.length} transactions pour ${formatMoney(totalVolume)} de volume accepté.`, icon: 'swap', color: C.amber, action: exportTx },
+        { key: 'clients', title: t('admin.reports.clients_title'), desc: loading ? t('common.loading') : t('admin.reports.clients_desc', { count: clients.length }), icon: 'users', color: C.navy, action: exportClients },
+        { key: 'cards', title: t('admin.reports.cards_title'), desc: loading ? t('common.loading') : t('admin.reports.cards_desc', { count: cards.length }), icon: 'card', color: C.slate, action: exportCards },
+        { key: 'tx', title: t('admin.reports.tx_title'), desc: loading ? t('common.loading') : t('admin.reports.tx_desc', { count: tx.length, volume: formatMoney(totalVolume) }), icon: 'swap', color: C.amber, action: exportTx },
     ]
 
     return (
         <>
             <div className="ad-page-header">
                 <div>
-                    <h1 style={{ fontFamily: fontTitle, fontSize: 26, fontWeight: 800, color: C.text, margin: 0 }}>Rapports</h1>
-                    <p style={{ color: C.muted, fontSize: 14, margin: '4px 0 0' }}>Exportez les données de la plateforme au format CSV.</p>
+                    <h1 style={{ fontFamily: fontTitle, fontSize: 26, fontWeight: 800, color: C.text, margin: 0 }}>{t('admin.reports.title')}</h1>
+                    <p style={{ color: C.muted, fontSize: 14, margin: '4px 0 0' }}>{t('admin.reports.subtitle')}</p>
                 </div>
-                <button className="ad-btn-outline" onClick={load}><Icon name="refresh" size={15} /> Actualiser</button>
+                <button className="ad-btn-outline" onClick={load}><Icon name="refresh" size={15} /> {t('common.refresh')}</button>
             </div>
 
             {lastExport && (
                 <div className="ad-alert-banner" style={{ background: C.greenBg, color: C.green }}>
-                    <Icon name="check" size={15} color={C.green} /> Export « {lastExport} » téléchargé avec succès.
+                    <Icon name="check" size={15} color={C.green} /> {t('admin.reports.export_success', { name: lastExport })}
                 </div>
             )}
 
@@ -90,9 +92,9 @@ export default function ReportsPage() {
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}><Icon name={r.icon} color="white" size={28} /></div>
                         <h3 style={{ fontFamily: fontTitle, fontSize: 20, fontWeight: 800, color: C.text, margin: '0 0 10px' }}>{r.title}</h3>
-                        <p style={{ fontSize: 15, color: C.muted, margin: '0 0 1.6rem', lineHeight: 1.65, flex: 1 }}>{loading ? 'Chargement...' : r.desc}</p>
+                        <p style={{ fontSize: 15, color: C.muted, margin: '0 0 1.6rem', lineHeight: 1.65, flex: 1 }}>{r.desc}</p>
                         <button className="ad-issue-btn" style={{ marginTop: 'auto', background: r.color, boxShadow: 'none', padding: '1rem' }} onClick={r.action} disabled={loading}>
-                            <Icon name="download" size={17} color="white" /> Télécharger le CSV
+                            <Icon name="download" size={17} color="white" /> {t('admin.reports.download_csv')}
                         </button>
                     </div>
                 ))}

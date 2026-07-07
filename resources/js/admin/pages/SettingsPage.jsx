@@ -1,10 +1,12 @@
 import React, { useState } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { C, fontTitle, Icon, initialsOf, useApi } from '../theme'
+import { useLanguage } from '../../i18n/LanguageContext'
 
 export default function SettingsPage() {
     const { admin } = useOutletContext()
     const api = useApi()
+    const { t } = useLanguage()
     const [name, setName] = useState(admin.name || '')
     const [email, setEmail] = useState(admin.email || '')
     const [saving, setSaving] = useState(false)
@@ -21,41 +23,47 @@ export default function SettingsPage() {
         try {
             const res = await api.patch('/me', { name, email })
             localStorage.setItem('user', JSON.stringify(res.data.user))
-            setMsg({ type: 'success', text: 'Profil mis à jour avec succès.' })
+            setMsg({ type: 'success', key: 'admin.settings.update_success' })
         } catch (err) {
-            setMsg({ type: 'error', text: err.response?.data?.message || 'Erreur lors de la mise à jour.' })
+            setMsg({ type: 'error', text: err.response?.data?.message, key: 'admin.settings.update_error' })
         } finally {
             setSaving(false)
         }
     }
 
+    const prefs = [
+        { label: t('admin.settings.notif_fraud'), desc: t('admin.settings.notif_fraud_desc'), state: notifFraud, setState: setNotifFraud },
+        { label: t('admin.settings.notif_weekly'), desc: t('admin.settings.notif_weekly_desc'), state: notifWeekly, setState: setNotifWeekly },
+        { label: t('admin.settings.two_factor'), desc: t('admin.settings.two_factor_desc'), state: twoFactor, setState: setTwoFactor },
+    ]
+
     return (
         <>
             <div className="ad-page-header">
                 <div>
-                    <h1 style={{ fontFamily: fontTitle, fontSize: 26, fontWeight: 800, color: C.text, margin: 0 }}>Paramètres</h1>
-                    <p style={{ color: C.muted, fontSize: 14, margin: '4px 0 0' }}>Gérez votre profil administrateur et vos préférences.</p>
+                    <h1 style={{ fontFamily: fontTitle, fontSize: 26, fontWeight: 800, color: C.text, margin: 0 }}>{t('admin.settings.title')}</h1>
+                    <p style={{ color: C.muted, fontSize: 14, margin: '4px 0 0' }}>{t('admin.settings.subtitle')}</p>
                 </div>
             </div>
 
             <div className="ad-grid-2" style={{ alignItems: 'stretch' }}>
                 <div className="ad-panel">
-                    <h2 style={{ fontFamily: fontTitle, fontSize: 17, fontWeight: 800, color: C.text, margin: '0 0 1.2rem' }}>Profil administrateur</h2>
+                    <h2 style={{ fontFamily: fontTitle, fontSize: 17, fontWeight: 800, color: C.text, margin: '0 0 1.2rem' }}>{t('admin.settings.profile_title')}</h2>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: '1.4rem' }}>
                         <div style={{ width: 56, height: 56, borderRadius: '50%', background: C.teal, color: 'white', fontWeight: 700, fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             {initialsOf(name) || 'AD'}
                         </div>
                         <div>
                             <div style={{ fontWeight: 700, fontSize: 16, color: C.text }}>{name || 'Administrateur'}</div>
-                            <div style={{ fontSize: 13, color: C.muted }}>Super Administrateur</div>
+                            <div style={{ fontSize: 13, color: C.muted }}>{t('admin.settings.role')}</div>
                         </div>
                     </div>
 
                     <form onSubmit={handleSave}>
-                        <label className="ad-form-label">Nom complet</label>
+                        <label className="ad-form-label">{t('admin.settings.full_name')}</label>
                         <input className="ad-form-input" value={name} onChange={e => setName(e.target.value)} required />
 
-                        <label className="ad-form-label">Adresse email</label>
+                        <label className="ad-form-label">{t('admin.settings.email_address')}</label>
                         <input className="ad-form-input" type="email" value={email} onChange={e => setEmail(e.target.value)} required />
 
                         {msg && (
@@ -65,24 +73,20 @@ export default function SettingsPage() {
                                 color: msg.type === 'success' ? C.green : C.red,
                             }}>
                                 <Icon name={msg.type === 'success' ? 'check' : 'close'} size={15} color={msg.type === 'success' ? C.green : C.red} />
-                                {msg.text}
+                                {msg.text || t(msg.key)}
                             </div>
                         )}
 
                         <button className="ad-issue-btn" type="submit" disabled={saving}>
-                            {saving ? 'Enregistrement...' : 'Enregistrer les modifications'}
+                            {saving ? t('common.saving') : t('common.save')}
                         </button>
                     </form>
                 </div>
 
                 <div className="ad-panel">
-                    <h2 style={{ fontFamily: fontTitle, fontSize: 17, fontWeight: 800, color: C.text, margin: '0 0 1.2rem' }}>Préférences &amp; sécurité</h2>
+                    <h2 style={{ fontFamily: fontTitle, fontSize: 17, fontWeight: 800, color: C.text, margin: '0 0 1.2rem' }}>{t('admin.settings.prefs_title')}</h2>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem' }}>
-                        {[
-                            { label: 'Alertes de fraude par email', desc: 'Recevoir un email immédiat lors d\'une transaction suspecte.', state: notifFraud, setState: setNotifFraud },
-                            { label: 'Résumé hebdomadaire', desc: 'Recevoir un rapport chaque lundi matin.', state: notifWeekly, setState: setNotifWeekly },
-                            { label: 'Authentification à deux facteurs', desc: 'Exiger un code OTP à chaque connexion admin.', state: twoFactor, setState: setTwoFactor },
-                        ].map(pref => (
+                        {prefs.map(pref => (
                             <div key={pref.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingBottom: '1.1rem', borderBottom: `1px solid ${C.border}` }}>
                                 <div>
                                     <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{pref.label}</div>
@@ -92,7 +96,7 @@ export default function SettingsPage() {
                             </div>
                         ))}
                         <div style={{ fontSize: 12.5, color: C.muted, display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <Icon name="shield" size={14} /> Ces préférences sont enregistrées localement pour cette session.
+                            <Icon name="shield" size={14} /> {t('admin.settings.local_pref')}
                         </div>
                     </div>
                 </div>

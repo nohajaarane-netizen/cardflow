@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { C, fontTitle, Icon, StatCard, useApi, STATUS_STYLES, PAGE_SIZE, formatMoney, initialsOf, CATEGORICAL, txDisplayStatus } from '../theme'
+import { useLanguage } from '../../i18n/LanguageContext'
 
 const LABELS = { accepted: 'Acceptée', refused: 'Refusée', suspicious: 'Suspecte' }
 
@@ -56,6 +57,7 @@ function printAsPdf(t) {
 
 export default function TransactionsPage() {
     const api = useApi()
+    const { t } = useLanguage()
     const [tx, setTx] = useState([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState('')
@@ -91,74 +93,74 @@ export default function TransactionsPage() {
         <>
             <div className="ad-page-header">
                 <div>
-                    <h1 style={{ fontFamily: fontTitle, fontSize: 24, fontWeight: 800, color: C.text, margin: 0 }}>Transactions</h1>
-                    <p style={{ color: C.muted, fontSize: 14, margin: '4px 0 0' }}>Historique de tous les paiements effectués par carte.</p>
+                    <h1 style={{ fontFamily: fontTitle, fontSize: 24, fontWeight: 800, color: C.text, margin: 0 }}>{t('admin.transactions.title')}</h1>
+                    <p style={{ color: C.muted, fontSize: 14, margin: '4px 0 0' }}>{t('admin.transactions.subtitle')}</p>
                 </div>
             </div>
 
             <div className="ad-stats" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
-                <StatCard label="Total transactions" value={loading ? '…' : tx.length} caption="Toutes cartes confondues" />
-                <StatCard label="Volume accepté" value={loading ? '…' : formatMoney(totalVolume)} trend={{ dir: 'up', text: `${acceptedRate}%` }} />
-                <StatCard label="Transactions suspectes" value={loading ? '…' : suspiciousCount} trend={suspiciousCount > 0 ? { dir: 'down', text: 'à revoir' } : { dir: 'up', text: 'RAS' }} />
+                <StatCard label={t('admin.transactions.total')} value={loading ? '…' : tx.length} caption={t('admin.transactions.all_cards')} />
+                <StatCard label={t('admin.transactions.accepted_volume')} value={loading ? '…' : formatMoney(totalVolume)} trend={{ dir: 'up', text: `${acceptedRate}%` }} />
+                <StatCard label={t('admin.transactions.suspicious')} value={loading ? '…' : suspiciousCount} trend={suspiciousCount > 0 ? { dir: 'down', text: t('admin.transactions.to_review') } : { dir: 'up', text: t('admin.transactions.rasa') }} />
             </div>
 
             <div className="ad-panel">
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                     <div className="ad-search">
                         <Icon name="search" size={16} />
-                        <input placeholder="Rechercher par marchand ou client..." value={search} onChange={e => setSearch(e.target.value)} />
+                        <input placeholder={t('admin.transactions.search')} value={search} onChange={e => setSearch(e.target.value)} />
                     </div>
                     <select className="ad-select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-                        <option value="all">Tous les statuts</option>
-                        <option value="accepted">Acceptée</option>
-                        <option value="refused">Refusée</option>
-                        <option value="suspicious">Suspecte</option>
+                        <option value="all">{t('admin.transactions.all_status')}</option>
+                        <option value="accepted">{t('admin.transactions.accepted')}</option>
+                        <option value="refused">{t('admin.transactions.refused')}</option>
+                        <option value="suspicious">{t('admin.transactions.suspect')}</option>
                     </select>
-                    <button className="ad-btn-outline" style={{ marginLeft: 'auto' }} onClick={load}><Icon name="refresh" size={15} /> Actualiser</button>
+                    <button className="ad-btn-outline" style={{ marginLeft: 'auto' }} onClick={load}><Icon name="refresh" size={15} /> {t('common.refresh')}</button>
                 </div>
 
                 <div style={{ overflowX: 'auto' }}>
                 <table className="ad-table ad-table-dark">
-                    <thead><tr><th>Marchand</th><th>Carte</th><th>Montant</th><th>Statut</th><th>3D Secure</th><th>Date</th><th>Exporter</th></tr></thead>
+                    <thead><tr><th>{t('admin.transactions.merchant')}</th><th>{t('admin.transactions.card')}</th><th>{t('common.amount')}</th><th>{t('common.status')}</th><th>{t('admin.transactions.threeds')}</th><th>{t('common.date')}</th><th>{t('admin.transactions.export')}</th></tr></thead>
                     <tbody>
                         {!loading && pageTx.length === 0 && (
-                            <tr><td colSpan={7} style={{ textAlign: 'center', color: C.muted, padding: '2.5rem 0' }}>Aucune transaction trouvée.</td></tr>
+                            <tr><td colSpan={7} style={{ textAlign: 'center', color: C.muted, padding: '2.5rem 0' }}>{t('admin.transactions.no_tx_found')}</td></tr>
                         )}
-                        {pageTx.map((t, i) => (
-                            <tr key={t.id}>
+                        {pageTx.map((tx, i) => (
+                            <tr key={tx.id}>
                                 <td>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                         <div className="ad-row-avatar" style={{ background: CATEGORICAL[i % CATEGORICAL.length] }}>
-                                            {initialsOf(t.marchand)}
+                                            {initialsOf(tx.marchand)}
                                         </div>
                                         <div>
-                                            <div style={{ fontWeight: 700 }}>{t.marchand}</div>
-                                            <div style={{ fontSize: 12.5, color: C.muted }}>{t.client?.name || '—'}</div>
+                                            <div style={{ fontWeight: 700 }}>{tx.marchand}</div>
+                                            <div style={{ fontSize: 12.5, color: C.muted }}>{tx.client?.name || '—'}</div>
                                         </div>
                                     </div>
                                 </td>
-                                <td style={{ fontFamily: 'monospace', color: C.muted }}>{t.card?.pan}</td>
-                                <td style={{ fontWeight: 700 }}>{Number(t.montant).toLocaleString('fr-FR')} MAD</td>
+                                <td style={{ fontFamily: 'monospace', color: C.muted }}>{tx.card?.pan}</td>
+                                <td style={{ fontWeight: 700 }}>{Number(tx.montant).toLocaleString('fr-FR')} MAD</td>
                                 <td>
-                                    <span className="ad-status-text" style={{ color: STATUS_STYLES[txDisplayStatus(t)].color }}>
-                                        <span className="ad-status-dot" style={{ background: STATUS_STYLES[txDisplayStatus(t)].color }} />
-                                        {LABELS[txDisplayStatus(t)]}
+                                    <span className="ad-status-text" style={{ color: STATUS_STYLES[txDisplayStatus(tx)].color }}>
+                                        <span className="ad-status-dot" style={{ background: STATUS_STYLES[txDisplayStatus(tx)].color }} />
+                                        {LABELS[txDisplayStatus(tx)]}
                                     </span>
                                 </td>
                                 <td>
-                                    {t.otp_verifie ? (
-                                        <span style={{ color: C.green, display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 600 }}><Icon name="check" size={14} color={C.green} /> Vérifié</span>
+                                    {tx.otp_verifie ? (
+                                        <span style={{ color: C.green, display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 600 }}><Icon name="check" size={14} color={C.green} /> {t('admin.transactions.verified')}</span>
                                     ) : (
-                                        <span style={{ color: C.muted, fontSize: 13 }}>Non vérifié</span>
+                                        <span style={{ color: C.muted, fontSize: 13 }}>{t('admin.transactions.not_verified')}</span>
                                     )}
                                 </td>
-                                <td style={{ color: C.muted }}>{new Date(t.created_at).toLocaleDateString('fr-FR')}</td>
+                                <td style={{ color: C.muted }}>{new Date(tx.created_at).toLocaleDateString('fr-FR')}</td>
                                 <td>
                                     <div style={{ display: 'flex', gap: 10 }}>
-                                        <button onClick={() => printAsPdf(t)} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: C.navy, fontSize: 12.5, fontWeight: 700 }}>
+                                        <button onClick={() => printAsPdf(tx)} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: C.navy, fontSize: 12.5, fontWeight: 700 }}>
                                             <Icon name="download" size={13} color={C.navy} /> PDF
                                         </button>
-                                        <button onClick={() => downloadCsv(t)} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: 12.5, fontWeight: 700 }}>
+                                        <button onClick={() => downloadCsv(tx)} style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none', cursor: 'pointer', color: C.muted, fontSize: 12.5, fontWeight: 700 }}>
                                             <Icon name="download" size={13} /> CSV
                                         </button>
                                     </div>
@@ -171,7 +173,7 @@ export default function TransactionsPage() {
 
                 <div className="ad-pagination">
                     <span style={{ fontSize: 13.5, color: C.muted }}>
-                        Affichage de {filtered.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1} à {Math.min(page * PAGE_SIZE, filtered.length)} sur {filtered.length} transactions
+                        {t('common.showing', { from: filtered.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1, to: Math.min(page * PAGE_SIZE, filtered.length), total: filtered.length, label: t('admin.transactions.tx_label') })}
                     </span>
                     <div style={{ display: 'flex', gap: 6 }}>
                         <button className="ad-page-btn" disabled={page === 1} onClick={() => setPage(p => Math.max(1, p - 1))}><Icon name="arrowLeft" size={14} color={C.text} /></button>

@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useOutletContext } from 'react-router-dom'
 import { C, fontTitle, Icon, useApi, STATUS_STYLES } from '../theme'
+import { useLanguage } from '../../i18n/LanguageContext'
 
-const TYPE_LABELS = { fraud: 'Fraude suspectée', blocked: 'Carte bloquée', expiration: "Expiration proche" }
 const TYPE_ICON = { fraud: 'shield', blocked: 'lock', expiration: 'close' }
 
 export default function DisputesPage() {
     const { refreshBadge } = useOutletContext()
     const api = useApi()
+    const { t } = useLanguage()
     const [alerts, setAlerts] = useState([])
     const [loading, setLoading] = useState(true)
     const [filter, setFilter] = useState('all')
@@ -34,24 +35,28 @@ export default function DisputesPage() {
 
     const unreadCount = alerts.filter(a => !a.lue).length
 
+    const TYPE_LABELS = { fraud: t('admin.disputes.type_fraud'), blocked: t('admin.disputes.type_blocked'), expiration: t('admin.disputes.type_expiration') }
+
+    const TABS = [
+        { key: 'all', label: t('admin.disputes.tab_all') },
+        { key: 'unread', label: t('admin.disputes.tab_unread') },
+        { key: 'fraud', label: t('admin.disputes.tab_fraud') },
+        { key: 'blocked', label: t('admin.disputes.tab_blocked') },
+        { key: 'expiration', label: t('admin.disputes.tab_expiration') },
+    ]
+
     return (
         <>
             <div className="ad-page-header">
                 <div>
-                    <h1 style={{ fontFamily: fontTitle, fontSize: 26, fontWeight: 800, color: C.text, margin: 0 }}>Litiges &amp; Alertes</h1>
+                    <h1 style={{ fontFamily: fontTitle, fontSize: 26, fontWeight: 800, color: C.text, margin: 0 }}>{t('admin.disputes.title')}</h1>
                     <p style={{ color: C.muted, fontSize: 14, margin: '4px 0 0' }}>
-                        {unreadCount > 0 ? `${unreadCount} alerte(s) non lue(s) nécessitent votre attention.` : 'Toutes les alertes ont été traitées.'}
+                        {unreadCount > 0 ? t('admin.disputes.unread_needs_attention', { count: unreadCount }) : t('admin.disputes.all_handled')}
                     </p>
                 </div>
                 <div className="ad-tabs">
-                    {[
-                        { key: 'all', label: 'Toutes' },
-                        { key: 'unread', label: 'Non lues' },
-                        { key: 'fraud', label: 'Fraude' },
-                        { key: 'blocked', label: 'Bloquées' },
-                        { key: 'expiration', label: 'Expiration' },
-                    ].map(t => (
-                        <button key={t.key} className={`ad-tab ${filter === t.key ? 'active' : ''}`} onClick={() => setFilter(t.key)}>{t.label}</button>
+                    {TABS.map(tab => (
+                        <button key={tab.key} className={`ad-tab ${filter === tab.key ? 'active' : ''}`} onClick={() => setFilter(tab.key)}>{tab.label}</button>
                     ))}
                 </div>
             </div>
@@ -60,7 +65,7 @@ export default function DisputesPage() {
                 {!loading && filtered.length === 0 && (
                     <div style={{ textAlign: 'center', color: C.muted, padding: '3rem 0' }}>
                         <Icon name="shield" size={32} color={C.border} />
-                        <div style={{ marginTop: 10 }}>Aucune alerte dans cette catégorie.</div>
+                        <div style={{ marginTop: 10 }}>{t('admin.disputes.no_alert')}</div>
                     </div>
                 )}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -88,7 +93,7 @@ export default function DisputesPage() {
                             </div>
                             {!a.lue && (
                                 <button className="ad-btn-outline" onClick={() => markRead(a.id)}>
-                                    <Icon name="check" size={14} /> Marquer comme lue
+                                    <Icon name="check" size={14} /> {t('admin.disputes.mark_read')}
                                 </button>
                             )}
                         </div>
