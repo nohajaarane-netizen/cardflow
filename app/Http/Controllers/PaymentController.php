@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\PaymentService;
+use App\Services\AuditService;
 
 class PaymentController extends Controller
 {
@@ -14,11 +15,6 @@ class PaymentController extends Controller
         $this->paymentService = $paymentService;
     }
 
-    /*
-    |----------------------------------------------------------
-    | pay — Paiement direct sans 3DS
-    |----------------------------------------------------------
-    */
     public function pay(Request $request)
     {
         $request->validate([
@@ -33,18 +29,17 @@ class PaymentController extends Controller
             $request->marchand
         );
 
+        AuditService::logRequest($request, 'payment_direct', 'Transaction', null, [
+            'card_id'  => $request->card_id,
+            'montant'  => $request->montant,
+            'marchand' => $request->marchand,
+            'code'     => $result['code_reponse'],
+        ]);
+
         $httpStatus = $result['statut'] === 'accepted' ? 200 : 422;
         return response()->json($result, $httpStatus);
     }
 
-    /*
-    |----------------------------------------------------------
-    | initiate — Étape 1 du 3DS : vérifier + générer OTP
-    |----------------------------------------------------------
-    | POST /api/payment/initiate
-    | Body : { card_id, montant, marchand }
-    |----------------------------------------------------------
-    */
     public function initiate(Request $request)
     {
         $request->validate([
@@ -59,18 +54,16 @@ class PaymentController extends Controller
             $request->marchand
         );
 
+        AuditService::logRequest($request, 'payment_initiate', 'Card', $request->card_id, [
+            'montant'  => $request->montant,
+            'marchand' => $request->marchand,
+            'success'  => $result['success'],
+        ]);
+
         $httpStatus = $result['success'] ? 200 : 422;
         return response()->json($result, $httpStatus);
     }
 
-    /*
-    |----------------------------------------------------------
-    | confirm — Étape 2 du 3DS : vérifier OTP
-    |----------------------------------------------------------
-    | POST /api/payment/confirm
-    | Body : { cache_key, otp }
-    |----------------------------------------------------------
-    */
     public function confirm(Request $request)
     {
         $request->validate([
@@ -82,6 +75,12 @@ class PaymentController extends Controller
             $request->cache_key,
             $request->otp
         );
+
+        AuditService::logRequest($request, 'payment_confirm', 'Transaction', null, [
+            'cache_key' => $request->cache_key,
+            'code'      => $result['code_reponse'],
+            'statut'    => $result['statut'],
+        ]);
 
         $httpStatus = $result['statut'] === 'accepted' ? 200 : 422;
         return response()->json($result, $httpStatus);

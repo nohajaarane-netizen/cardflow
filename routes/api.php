@@ -7,7 +7,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\AlertController;
 use App\Http\Controllers\TransactionController;
-
+use App\Http\Controllers\AuditLogController;
 
 /*
 |----------------------------------------------------------
@@ -53,5 +53,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Transactions
     Route::get('/transactions', [TransactionController::class, 'index']); // liste des transactions
+    Route::get('/audit-logs', [AuditLogController::class, 'index']);
 
-});
+}); 

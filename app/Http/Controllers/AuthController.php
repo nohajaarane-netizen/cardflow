@@ -5,18 +5,10 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
+use App\Services\AuditService;
 
 class AuthController extends Controller
 {
-    /*
-    |----------------------------------------------------------
-    | register — Créer un nouveau compte
-    |----------------------------------------------------------
-    | POST /api/register
-    | Body : { name, email, password }
-    | Le rôle est forcé à "client" côté serveur
-    |----------------------------------------------------------
-    */
     public function register(Request $request)
     {
         $request->validate([
@@ -29,10 +21,14 @@ class AuthController extends Controller
             'name'     => $request->name,
             'email'    => $request->email,
             'password' => Hash::make($request->password),
-            'role'     => 'client', // forcé côté serveur
+            'role'     => 'client',
         ]);
 
         $token = $user->createToken('auth_token')->plainTextToken;
+
+        AuditService::logRequest($request, 'register', 'User', $user->id, [
+            'email' => $user->email,
+        ]);
 
         return response()->json([
             'message' => 'Compte créé avec succès',
@@ -42,14 +38,6 @@ class AuthController extends Controller
         ], 201);
     }
 
-    /*
-    |----------------------------------------------------------
-    | login — Se connecter
-    |----------------------------------------------------------
-    | POST /api/login
-    | Body : { email, password }
-    |----------------------------------------------------------
-    */
     public function login(Request $request)
     {
         $request->validate([
@@ -60,12 +48,23 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
+            // Log tentative échouée
+            AuditService::log(null, 'login_failed', 'User', null, [
+                'email' => $request->email,
+            ], $request->ip());
+
             return response()->json([
                 'message' => 'Email ou mot de passe incorrect',
             ], 401);
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
+
+        // Log connexion réussie
+        AuditService::log($user->id, 'login', 'User', $user->id, [
+            'email' => $user->email,
+            'role'  => $user->role,
+        ], $request->ip());
 
         return response()->json([
             'message' => 'Connexion réussie',
@@ -75,43 +74,28 @@ class AuthController extends Controller
         ]);
     }
 
-    /*
-    |----------------------------------------------------------
-    | logout — Se déconnecter
-    |----------------------------------------------------------
-    | POST /api/logout
-    | Supprime le token actuel
-    |----------------------------------------------------------
-    */
     public function logout(Request $request)
     {
+        // Log déconnexion
+        AuditService::log(
+            $request->user()->id,
+            'logout',
+            'User',
+            $request->user()->id,
+            [],
+            $request->ip()
+        );
+
         $request->user()->currentAccessToken()->delete();
 
-        return response()->json([
-            'message' => 'Déconnexion réussie',
-        ]);
+        return response()->json(['message' => 'Déconnexion réussie']);
     }
 
-    /*
-    |----------------------------------------------------------
-    | me — Voir son propre profil
-    |----------------------------------------------------------
-    | GET /api/me
-    |----------------------------------------------------------
-    */
     public function me(Request $request)
     {
         return response()->json($request->user());
     }
 
-    /*
-    |----------------------------------------------------------
-    | updateProfile — Modifier son propre profil
-    |----------------------------------------------------------
-    | PATCH /api/me
-    | Body : { name?, email? }
-    |----------------------------------------------------------
-    */
     public function updateProfile(Request $request)
     {
         $user = $request->user();
@@ -119,16 +103,17 @@ class AuthController extends Controller
         $request->validate([
             'name'  => 'sometimes|string|max:255',
             'email' => 'sometimes|email|unique:users,email,' . $user->id,
-        ], [
-            'name.string'  => 'Le nom doit être une chaîne de caractères',
-            'email.email'  => 'L\'adresse email n\'est pas valide',
-            'email.unique' => 'Cet email est déjà utilisé',
         ]);
 
         if ($request->has('name'))  $user->name  = $request->name;
         if ($request->has('email')) $user->email = $request->email;
 
         $user->save();
+
+        AuditService::logRequest($request, 'update_profile', 'User', $user->id, [
+            'name'  => $user->name,
+            'email' => $user->email,
+        ]);
 
         return response()->json([
             'message' => 'Profil mis à jour avec succès',

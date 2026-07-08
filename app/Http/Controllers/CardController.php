@@ -4,41 +4,29 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Card;
-use App\Models\User;
-use Carbon\Carbon;
 use App\Http\Resources\CardResource;
 use App\Services\LuhnService;
-
+use App\Services\AuditService;
+use Illuminate\Support\Facades\Hash;
+use Carbon\Carbon;
 
 class CardController extends Controller
 {
-    /*
-    |----------------------------------------------------------
-    | index — Voir toutes les cartes
-    |----------------------------------------------------------
-    | Admin → voit toutes les cartes de tous les clients
-    | Client → voit seulement ses propres cartes
-    |----------------------------------------------------------
-    */
-      public function index(Request $request)
+    public function index(Request $request)
     {
-          $user = $request->user();
+        $user = $request->user();
 
-          if ($user->role === 'admin') {
-             $cards = Card::with('user')->get();
-              } else {
-               $cards = Card::where('user_id', $user->id)->get();
-                }
-            return CardResource::collection($cards);
+        if ($user->role === 'admin') {
+            $cards = Card::with('user')->get();
+        } else {
+            $cards = Card::where('user_id', $user->id)->get();
+        }
+
+        return CardResource::collection($cards);
     }
-    /*
-    |----------------------------------------------------------
-    | store — Créer une nouvelle carte (Admin seulement)
-    |----------------------------------------------------------
-    */
-   public function store(Request $request)
+
+    public function store(Request $request)
     {
-        // Validation avec messages personnalisés
         $request->validate([
             'user_id' => 'required|exists:users,id',
             'type'    => 'required|in:visa,mastercard',
@@ -49,32 +37,27 @@ class CardController extends Controller
             'type.required'    => 'Le type de carte est obligatoire',
             'type.in'          => 'Le type doit être visa ou mastercard',
             'plafond.required' => 'Le plafond est obligatoire',
-            'plafond.numeric'  => 'Le plafond doit être un nombre',
             'plafond.min'      => 'Le plafond minimum est 100 MAD',
             'plafond.max'      => 'Le plafond maximum est 50 000 MAD',
         ]);
 
-        // Vérifier que le user n'est pas un admin
-        $targetUser = User::findOrFail($request->user_id);
-        if ($targetUser->role === 'admin') {
-            return response()->json([
-                'message' => 'Impossible de créer une carte pour un admin'
-            ], 422);
-        }
-
-        // Générer le numéro de carte selon le type
         $prefix = $request->type === 'visa' ? '4532' : '5412';
-        $pan = LuhnService::generate($prefix); // numéro valide algorithmiquement
+        $pan    = LuhnService::generate($prefix);
 
-        // Créer la carte
         $card = Card::create([
             'user_id'    => $request->user_id,
             'pan'        => $pan,
-            'cvv'        => bcrypt((string) rand(100, 999)),
+            'cvv'        => str_pad(rand(100, 999), 3, '0', STR_PAD_LEFT),
             'type'       => $request->type,
             'statut'     => 'active',
             'plafond'    => $request->plafond,
             'expiration' => Carbon::now()->addYears(3),
+        ]);
+
+        AuditService::logRequest($request, 'create_card', 'Card', $card->id, [
+            'type'    => $card->type,
+            'plafond' => $card->plafond,
+            'user_id' => $card->user_id,
         ]);
 
         return response()->json([
@@ -83,45 +66,39 @@ class CardController extends Controller
         ], 201);
     }
 
-    /*
-    |----------------------------------------------------------
-    | show — Voir une carte spécifique
-    |----------------------------------------------------------
-    */
     public function show(Request $request, $id)
     {
         $user = $request->user();
         $card = Card::findOrFail($id);
 
-        if ($user->role === 'client' && $card->user_id !== $user->id) {
+        if ($user->role !== 'admin' && $card->user_id !== $user->id) {
             return response()->json(['message' => 'Accès refusé'], 403);
         }
 
         return new CardResource($card);
     }
-    /*
-    |----------------------------------------------------------
-    | block — Bloquer une carte (Admin seulement)
-    |----------------------------------------------------------
-    */
-    public function block($id)
+
+    public function block(Request $request, $id)
     {
         $card = Card::findOrFail($id);
         $card->update(['statut' => 'blocked']);
 
-        return response()->json(['message' => 'Carte bloquée']);
+        AuditService::logRequest($request, 'block_card', 'Card', $card->id, [
+            'user_id' => $card->user_id,
+        ]);
+
+        return response()->json(['message' => 'Carte bloquée avec succès']);
     }
 
-    /*
-    |----------------------------------------------------------
-    | unblock — Débloquer une carte (Admin seulement)
-    |----------------------------------------------------------
-    */
-    public function unblock($id)
+    public function unblock(Request $request, $id)
     {
         $card = Card::findOrFail($id);
         $card->update(['statut' => 'active']);
 
-        return response()->json(['message' => 'Carte débloquée']);
+        AuditService::logRequest($request, 'unblock_card', 'Card', $card->id, [
+            'user_id' => $card->user_id,
+        ]);
+
+        return response()->json(['message' => 'Carte débloquée avec succès']);
     }
 }
