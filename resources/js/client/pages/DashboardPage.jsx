@@ -107,7 +107,8 @@ export default function DashboardPage() {
                         {filteredTx.map(t2 => (
                             <div key={t2.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '0.9rem 0', borderBottom: `1px solid ${C.border}` }}>
                                 <div style={{
-                                    width: 42, height: 42, borderRadius: 12, background: C.bg,
+                                    width: 42, height: 42, borderRadius: 12,
+                                    background: t2.statut === 'accepted' ? C.greenBg : C.redBg,
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                                 }}>
                                     <Icon name={t2.statut === 'accepted' ? 'arrowDown' : 'close'} color={t2.statut === 'accepted' ? C.green : C.red} size={17} />
@@ -126,7 +127,7 @@ export default function DashboardPage() {
                                 </div>
                             </div>
                         ))}
-                        {!loading && filteredTx.length > 0 && filteredTx.length < 5 && (
+                        {!loading && filteredTx.length > 0 && filteredTxAll.length <= visibleCount && filteredTx.length < 5 && (
                             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, color: C.muted, textAlign: 'center', padding: '1rem 0' }}>
                                 <Icon name="shield" size={26} color={C.border} />
                                 <span style={{ fontSize: 12.5, maxWidth: 240 }}>{t('client.dashboard.secure_note')}</span>

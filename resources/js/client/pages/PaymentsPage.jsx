@@ -68,7 +68,15 @@ export default function PaymentsPage() {
             setOtp('')
             await load()
         } catch (err) {
-            setMsg({ type: 'error', text: err.response?.data?.message, key: 'client.payments.otp_invalid' })
+            const data = err.response?.data
+            setMsg({ type: 'error', text: data?.message, key: 'client.payments.otp_invalid' })
+            if (data?.code_reponse === '62') {
+                setStep('form')
+                setAmount('')
+                setMerchant('')
+                setOtp('')
+                await load()
+            }
         } finally {
             setBusy(false)
         }

@@ -35,6 +35,7 @@ export const translations = {
         'nav.admin.settings': 'Paramètres',
         'nav.admin.users': 'Utilisateurs',
         'nav.admin.support': 'Support',
+        'nav.admin.audit_logs': "Journaux d'audit",
 
         // Navigation client
         'nav.client.dashboard': 'Tableau de bord',
@@ -176,11 +177,23 @@ export const translations = {
         'admin.disputes.tab_fraud': 'Fraude',
         'admin.disputes.tab_blocked': 'Bloquées',
         'admin.disputes.tab_expiration': 'Expiration',
+        'admin.disputes.tab_security': 'Sécurité',
         'admin.disputes.no_alert': 'Aucune alerte dans cette catégorie.',
         'admin.disputes.mark_read': 'Marquer comme lue',
         'admin.disputes.type_fraud': 'Fraude suspectée',
         'admin.disputes.type_blocked': 'Carte bloquée',
         'admin.disputes.type_expiration': 'Expiration proche',
+        'admin.disputes.type_security': 'Alerte de sécurité',
+
+        // Admin — Audit Logs
+        'admin.audit_logs.title': "Journaux d'audit",
+        'admin.audit_logs.subtitle': "Les 100 dernières actions enregistrées sur la plateforme.",
+        'admin.audit_logs.user': 'Utilisateur',
+        'admin.audit_logs.action': 'Action',
+        'admin.audit_logs.ip': 'Adresse IP',
+        'admin.audit_logs.details': 'Détails',
+        'admin.audit_logs.no_log': "Aucun log d'audit trouvé.",
+        'admin.audit_logs.logs_label': "logs",
 
         // Admin — Analytics
         'admin.analytics.title': 'Analytique',
@@ -464,6 +477,7 @@ export const translations = {
         'nav.admin.settings': 'Settings',
         'nav.admin.users': 'Users',
         'nav.admin.support': 'Support',
+        'nav.admin.audit_logs': 'Audit Logs',
 
         'nav.client.dashboard': 'Dashboard',
         'nav.client.cards': 'My Cards',
@@ -598,11 +612,23 @@ export const translations = {
         'admin.disputes.tab_fraud': 'Fraud',
         'admin.disputes.tab_blocked': 'Blocked',
         'admin.disputes.tab_expiration': 'Expiration',
+        'admin.disputes.tab_security': 'Security',
         'admin.disputes.no_alert': 'No alert in this category.',
         'admin.disputes.mark_read': 'Mark as read',
         'admin.disputes.type_fraud': 'Suspected fraud',
         'admin.disputes.type_blocked': 'Card blocked',
         'admin.disputes.type_expiration': 'Upcoming expiration',
+        'admin.disputes.type_security': 'Security alert',
+
+        // Admin — Audit Logs
+        'admin.audit_logs.title': 'Audit Logs',
+        'admin.audit_logs.subtitle': 'The last 100 actions recorded on the platform.',
+        'admin.audit_logs.user': 'User',
+        'admin.audit_logs.action': 'Action',
+        'admin.audit_logs.ip': 'IP Address',
+        'admin.audit_logs.details': 'Details',
+        'admin.audit_logs.no_log': 'No audit log found.',
+        'admin.audit_logs.logs_label': 'logs',
 
         'admin.analytics.title': 'Analytics',
         'admin.analytics.subtitle': 'Key metrics computed from platform data.',

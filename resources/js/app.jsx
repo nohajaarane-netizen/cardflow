@@ -13,6 +13,7 @@ import ReportsPage from './admin/pages/ReportsPage'
 import SettingsPage from './admin/pages/SettingsPage'
 import UsersPage from './admin/pages/UsersPage'
 import SupportPage from './admin/pages/SupportPage'
+import AuditLogsPage from './admin/pages/AuditLogsPage'
 import ClientLayout from './client/ClientLayout'
 import ClientDashboardPage from './client/pages/DashboardPage'
 import ClientCardsPage from './client/pages/CardsPage'
@@ -68,6 +69,7 @@ function App() {
                     <Route path="settings" element={<SettingsPage />} />
                     <Route path="users" element={<UsersPage />} />
                     <Route path="support" element={<SupportPage />} />
+                    <Route path="audit-logs" element={<AuditLogsPage />} />
                 </Route>
                 <Route
                     path="/client"

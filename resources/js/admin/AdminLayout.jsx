@@ -19,6 +19,7 @@ const OTHER_NAV = [
     { to: '/admin/settings', key: 'nav.admin.settings', icon: 'gear' },
     { to: '/admin/users',    key: 'nav.admin.users',    icon: 'user' },
     { to: '/admin/support',  key: 'nav.admin.support',  icon: 'help' },
+    { to: '/admin/audit-logs', key: 'nav.admin.audit_logs', icon: 'shield' },
 ]
 
 export default function AdminLayout() {

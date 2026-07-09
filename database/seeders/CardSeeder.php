@@ -28,6 +28,12 @@ class CardSeeder extends Seeder
                 $prefix  = $type === 'visa' ? '4532' : '5412';
                 $plafond = $plafonds[($index + $i) % count($plafonds)];
 
+                // Plafond journalier dérivé du plafond global
+                if ($plafond <= 3000)        $plafondJournalier = 500;
+                elseif ($plafond <= 5000)    $plafondJournalier = 1000;
+                elseif ($plafond <= 10000)   $plafondJournalier = 2000;
+                else                         $plafondJournalier = 3000;
+
                 // Statut : 80% active, 15% blocked, 5% expired
                 $rand = rand(1, 100);
                 if ($rand <= 80)       $statut = 'active';
@@ -52,6 +58,7 @@ class CardSeeder extends Seeder
                     'type'       => $type,
                     'statut'     => $statut,
                     'plafond'    => $plafond,
+                    'plafond_journalier' => $plafondJournalier,
                     'expiration' => $expiration,
                     'created_at' => $createdAt,
                     'updated_at' => $createdAt,

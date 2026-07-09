@@ -48,9 +48,22 @@ class TransactionSeeder extends Seeder
                 } elseif ($rand <= 70) {
                     $statut       = 'accepted';
                     $codeReponse  = '00';
+                } elseif ($rand <= 80) {
+                    // Plafond insuffisant → code 51
+                    $statut       = 'refused';
+                    $codeReponse  = '51';
                 } elseif ($rand <= 85) {
+                    // Carte bloquée → code 62
+                    $statut       = 'refused';
+                    $codeReponse  = '62';
+                } elseif ($rand <= 90) {
+                    // OTP incorrect → code 05
                     $statut       = 'refused';
                     $codeReponse  = '05';
+                } elseif ($rand <= 95) {
+                    // Plafond journalier dépassé → code 61
+                    $statut       = 'refused';
+                    $codeReponse  = '61';
                 } else {
                     // Transaction suspecte → code 59
                     $statut       = 'refused';

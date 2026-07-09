@@ -20,9 +20,24 @@ class AuditLogController extends Controller
             return response()->json(['message' => 'Accès refusé'], 403);
         }
 
-        $logs = AuditLog::with('user')
-            ->orderBy('created_at', 'desc')
-            ->take(100) // 100 derniers logs
+        $perPage = (int) $request->input('per_page', 20);
+        $page    = max((int) $request->input('page', 1), 1);
+
+        $query = AuditLog::with('user')->orderBy('created_at', 'desc');
+
+        if ($request->filled('action')) {
+            $query->where('action', $request->input('action'));
+        }
+
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->input('user_id'));
+        }
+
+        $total = $query->count();
+
+        $logs = $query
+            ->skip(($page - 1) * $perPage)
+            ->take($perPage)
             ->get()
             ->map(function ($log) {
                 return [
@@ -42,6 +57,11 @@ class AuditLogController extends Controller
                 ];
             });
 
-        return response()->json($logs);
+        return response()->json([
+            'data'     => $logs,
+            'total'    => $total,
+            'page'     => $page,
+            'per_page' => $perPage,
+        ]);
     }
 }

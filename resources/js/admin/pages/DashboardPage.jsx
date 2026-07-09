@@ -143,12 +143,16 @@ export default function DashboardPage() {
             <div className="ad-hero-grid">
                 <div className="ad-hero-stack">
                     <StatCard
+                        icon="users"
+                        accent="blueDark"
                         label={t('admin.dashboard.total_clients')}
                         value={loading ? '…' : clients.length}
                         trend={{ dir: 'up', text: t('admin.dashboard.active_label', { count: clients.length - clients.filter(c => c.cards_count === 0).length }) }}
                         caption={t('admin.dashboard.no_card_count', { count: clients.filter(c => c.cards_count === 0).length })}
                     />
                     <StatCard
+                        icon="card"
+                        accent="teal"
                         label={t('admin.dashboard.total_cards')}
                         value={loading ? '…' : cards.length}
                         trend={blockedCards > 0 ? { dir: 'down', text: t('admin.dashboard.blocked_count', { count: blockedCards }) } : { dir: 'up', text: t('admin.dashboard.rasa') }}

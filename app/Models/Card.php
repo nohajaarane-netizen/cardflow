@@ -9,7 +9,7 @@ class Card extends Model
     // Champs qu'on peut remplir
     protected $fillable = [
         'user_id', 'pan', 'cvv', 'type',
-        'statut', 'plafond', 'expiration'
+        'statut', 'plafond', 'plafond_journalier', 'expiration'
     ];
     
     // Une carte appartient à un utilisateur

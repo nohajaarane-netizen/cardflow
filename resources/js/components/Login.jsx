@@ -82,8 +82,11 @@ export default function Login() {
             window.location.href = user.role === 'admin'
                 ? '/admin/dashboard'
                 : '/client/dashboard'
-        } catch {
-            setError('Email ou mot de passe incorrect.')
+        } catch (err) {
+            const message = err.response?.data?.message
+                || Object.values(err.response?.data?.errors || {})[0]?.[0]
+                || (err.request ? 'Impossible de contacter le serveur. Vérifiez que le backend est démarré.' : 'Une erreur est survenue.')
+            setError(message)
             setLoading(false)
         }
     }

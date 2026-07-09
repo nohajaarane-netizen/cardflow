@@ -14,8 +14,8 @@ export const C = {
     slate:    '#6B7280',
     purple:   '#8B5CF6',
     muted:    '#6B7280',
-    border:   '#E5E7EB',
-    bg:       '#F3F4F6',
+    border:   '#E1E5F0',
+    bg:       '#EBEEF6',
     white:    '#FFFFFF',
     text:     '#111111',
     green:    '#1E9E5A',
@@ -113,6 +113,7 @@ export function Sparkline({ color, seed }) {
     const d = points.map((v, i) => `${i === 0 ? 'M' : 'L'}${i * step},${norm(v)}`).join(' ')
     const area = `${d} L${w},${h} L0,${h} Z`
     const gid = 'spark-' + color.replace('#', '')
+    const pathLen = points.length * step * 1.3
     return (
         <svg width="100%" height={h} viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none">
             <defs>
@@ -121,18 +122,25 @@ export function Sparkline({ color, seed }) {
                     <stop offset="100%" stopColor={color} stopOpacity="0"/>
                 </linearGradient>
             </defs>
-            <path d={area} fill={`url(#${gid})`} />
-            <path d={d} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path className="ad-spark-area" d={area} fill={`url(#${gid})`} />
+            <path className="ad-spark-line" style={{ '--spark-len': pathLen }} d={d} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
     )
 }
 
 /* Carte stat façon Bankio — libellé, badge de tendance en haut à droite, grande valeur, légende */
-export function StatCard({ label, value, trend, caption, big }) {
+export function StatCard({ label, value, trend, caption, big, accent, icon }) {
+    const accentColor = accent ? (C[accent] || accent) : null
     return (
-        <div className="ad-stat-card">
+        <div className="ad-stat-card" style={accentColor ? { borderLeft: `3px solid ${accentColor}` } : undefined}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-                <span className="ad-stat-label">{label}</span>
+                {icon ? (
+                    <div className="ad-stat-icon" style={{ background: `${accentColor || C.navy}17`, marginBottom: 0 }}>
+                        <Icon name={icon} color={accentColor || C.navy} size={18} />
+                    </div>
+                ) : (
+                    <span className="ad-stat-label">{label}</span>
+                )}
                 {trend && (
                     <span className={`ad-stat-trend ${trend.dir}`}>
                         <Icon name={trend.dir === 'up' ? 'arrowUp' : 'arrowDown'} size={10} color={trend.dir === 'up' ? C.green : C.red} />
@@ -140,6 +148,7 @@ export function StatCard({ label, value, trend, caption, big }) {
                     </span>
                 )}
             </div>
+            {icon && <span className="ad-stat-label" style={{ display: 'block', marginTop: 10 }}>{label}</span>}
             <div className="ad-stat-value" style={big ? { fontSize: 30 } : undefined}>{value}</div>
             {caption && <div className="ad-stat-caption">{caption}</div>}
         </div>
@@ -161,10 +170,10 @@ export function BarChart({ data, unit = '' }) {
                         <span style={{ color: C.muted, fontWeight: 600 }}>{d.value}{unit}</span>
                     </div>
                     <div style={{ height: 10, borderRadius: 999, background: '#EDEAE1', overflow: 'hidden' }}>
-                        <div style={{
-                            width: `${Math.max((d.value / max) * 100, 3)}%`, height: '100%',
-                            borderRadius: 999, background: d.color || CATEGORICAL[i % CATEGORICAL.length],
-                            transition: 'width 0.5s ease',
+                        <div className="ad-bar-h-anim" style={{
+                            '--bar-w': `${Math.max((d.value / max) * 100, 3)}%`,
+                            height: '100%', borderRadius: 999, background: d.color || CATEGORICAL[i % CATEGORICAL.length],
+                            animationDelay: `${i * 90}ms`,
                         }} />
                     </div>
                 </div>
@@ -233,11 +242,13 @@ export function DonutChart({ data, size = 176, centerLabel = 'total' }) {
                 width={canvas} height={canvas}
                 viewBox={`${-margin} ${-margin} ${canvas} ${canvas}`}
                 style={{ flexShrink: 0 }}
+                className="ad-donut-wrap"
             >
                 <circle cx={r} cy={r} r={cRadius} fill="none" stroke="#EDEAE1" strokeWidth={stroke} />
                 {segments.map(s => (
                     <circle
                         key={s.label}
+                        className="ad-donut-seg"
                         cx={r} cy={r} r={cRadius} fill="none"
                         stroke={s.color} strokeWidth={stroke}
                         strokeDasharray={`${Math.max(s.dash - 3, 0)} ${circumference - s.dash + 3}`}
@@ -296,6 +307,7 @@ export const STATUS_STYLES = {
     suspicious:{ bg: C.amberBg, color: C.amber },
     fraud:     { bg: C.redBg,  color: C.red },
     expiration:{ bg: C.amberBg, color: C.amber },
+    security:  { bg: C.redBg,  color: C.red },
     admin:     { bg: '#EDE9FE', color: C.purple },
     client:    { bg: '#E4ECFB', color: C.blueDark },
 }
@@ -312,7 +324,8 @@ export const sharedCss = `
     .ad-logo { display: flex; align-items: center; gap: 10px; padding: 0.2rem 0.3rem 1.5rem; }
     .ad-nav-group-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; color: ${C.muted}; text-transform: uppercase; padding: 0 0.7rem; margin: 1.1rem 0 0.5rem; }
     .ad-nav-group-label:first-of-type { margin-top: 0; }
-    .ad-nav { display: flex; flex-direction: column; gap: 3px; flex: 1; overflow-y: auto; }
+    .ad-nav { display: flex; flex-direction: column; gap: 3px; flex: 1; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; }
+    .ad-nav::-webkit-scrollbar { display: none; }
     .ad-nav-item {
         display: flex; align-items: center; gap: 12px; padding: 0.68rem 0.85rem;
         border-radius: 11px; cursor: pointer; font-size: 14px; font-weight: 600;
@@ -330,21 +343,25 @@ export const sharedCss = `
         background: ${C.navy};
         color: ${C.white};
     }
-    .ad-main { flex: 1; padding: 1.75rem 2.25rem; min-width: 0; }
+    .ad-main { flex: 1; padding: 1.75rem 1.25rem; min-width: 0; }
     .ad-topbar {
         display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.75rem; gap: 1.5rem;
-        flex-wrap: wrap; background: ${C.white}; border: 1px solid ${C.border}; border-radius: 20px; padding: 1.6rem 1.8rem;
+        flex-wrap: wrap; background: ${C.white}; border: 1px solid ${C.border}; border-radius: 20px; padding: 1.6rem 1.2rem;
     }
     .ad-avatar {
         width: 44px; height: 44px; border-radius: 50%; background: ${C.navy};
         display: flex; align-items: center; justify-content: center; color: ${C.white};
         font-weight: 700; font-size: 15px; cursor: pointer; border: none; flex-shrink: 0;
+        transition: transform 0.15s ease;
     }
+    .ad-avatar:hover { transform: scale(1.06); }
     .ad-bell {
         width: 44px; height: 44px; border-radius: 50%; border: 1px solid ${C.border};
         display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer;
-        background: ${C.white}; text-decoration: none;
+        background: ${C.white}; text-decoration: none; transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
     }
+    .ad-bell:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(27,35,64,0.12); border-color: ${C.blue}; }
+    .ad-bell:active { transform: translateY(0) scale(0.96); }
     .ad-badge {
         position: absolute; top: -3px; right: -3px; background: ${C.red}; color: white;
         font-size: 10px; font-weight: 700; border-radius: 50%; width: 17px; height: 17px;
@@ -353,14 +370,19 @@ export const sharedCss = `
     .ad-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.1rem; margin-bottom: 1.5rem; }
     .ad-hero-grid { display: grid; grid-template-columns: 1fr 1.35fr 1fr; gap: 1.1rem; margin-bottom: 1.25rem; align-items: stretch; }
     .ad-hero-stack { display: flex; flex-direction: column; gap: 1.1rem; }
+    .ad-hero-stack .ad-stat-card:nth-child(1) { animation-delay: 0.03s; }
+    .ad-hero-stack .ad-stat-card:nth-child(2) { animation-delay: 0.1s; }
     .ad-hero-wide {
         background: ${C.white}; border-radius: 20px; border: 1px solid ${C.border}; padding: 1.3rem 1.4rem;
-        box-shadow: 0 1px 3px rgba(35,38,31,0.03); display: flex; flex-direction: column; gap: 14px; justify-content: space-between;
+        box-shadow: 0 2px 12px rgba(27,35,64,0.06); display: flex; flex-direction: column; gap: 14px; justify-content: space-between;
+        border-top: 3px solid ${C.blue};
     }
     .ad-hero-dark {
         background: ${C.navy}; color: white; border-radius: 20px; padding: 1.3rem 1.4rem;
         display: flex; flex-direction: column; justify-content: space-between; gap: 10px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease; animation: adFadeUp 0.4s ease backwards;
     }
+    .ad-hero-dark:hover { transform: translateY(-3px); box-shadow: 0 12px 26px rgba(27,35,64,0.28); }
     .ad-hero-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
     .ad-hero-divider { height: 1px; background: ${C.border}; margin: 2px 0; }
     .ad-table-dark thead th {
@@ -371,8 +393,10 @@ export const sharedCss = `
     .ad-table-dark thead tr th:last-child { border-radius: 0 12px 12px 0; }
     .ad-stat-card {
         background: ${C.white}; border-radius: 18px; padding: 1.3rem 1.4rem;
-        border: 1px solid ${C.border}; box-shadow: 0 1px 3px rgba(35,38,31,0.03);
+        border: 1px solid ${C.border}; box-shadow: 0 2px 10px rgba(27,35,64,0.06);
+        transition: transform 0.2s ease, box-shadow 0.2s ease; animation: adFadeUp 0.4s ease backwards;
     }
+    .ad-stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(27,35,64,0.12); }
     .ad-stat-label { font-size: 13px; color: ${C.muted}; font-weight: 600; }
     .ad-stat-value { font-size: 27px; font-weight: 800; font-family: ${fontTitle}; color: ${C.text}; margin-top: 10px; letter-spacing: -0.3px; }
     .ad-stat-caption { font-size: 12px; color: ${C.muted}; margin-top: 6px; }
@@ -387,7 +411,8 @@ export const sharedCss = `
     .ad-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; align-items: start; }
     .ad-panel {
         background: ${C.white}; border-radius: 20px; border: 1px solid ${C.border};
-        padding: 1.5rem; box-shadow: 0 1px 3px rgba(35,38,31,0.03);
+        padding: 1.5rem; box-shadow: 0 2px 12px rgba(27,35,64,0.06);
+        animation: adFadeUp 0.45s ease backwards; transition: box-shadow 0.2s ease;
     }
     .ad-search {
         display: flex; align-items: center; gap: 8px; border: 1.5px solid ${C.border};
@@ -398,7 +423,9 @@ export const sharedCss = `
         display: flex; align-items: center; gap: 8px; border: 1.5px solid ${C.border};
         border-radius: 12px; padding: 0.65rem 1rem; font-size: 14px; font-weight: 600;
         color: ${C.text}; background: ${C.white}; cursor: pointer; white-space: nowrap; font-family: ${font};
+        transition: transform 0.15s ease, border-color 0.15s ease;
     }
+    .ad-filter-btn:hover { transform: translateY(-1px); border-color: ${C.blue}; }
     .ad-filter-btn.on { background: ${C.navy}; color: white; border-color: ${C.navy}; }
     table.ad-table { width: 100%; border-collapse: collapse; margin-top: 1.25rem; }
     .ad-table th {
@@ -406,6 +433,8 @@ export const sharedCss = `
         color: ${C.muted}; font-weight: 700; padding: 0 0.6rem 0.75rem; border-bottom: 1px solid ${C.border};
     }
     .ad-table td { padding: 0.9rem 0.6rem; border-bottom: 1px solid ${C.border}; font-size: 14.5px; color: ${C.text}; }
+    .ad-table tbody tr { transition: background 0.15s ease; }
+    .ad-table tbody tr:hover { background: ${C.bg}; }
     .ad-status-pill { padding: 0.3rem 0.75rem; border-radius: 999px; font-size: 12.5px; font-weight: 700; display: inline-block; text-transform: capitalize; }
     .ad-status-text { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 700; text-transform: capitalize; }
     .ad-status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
@@ -415,14 +444,19 @@ export const sharedCss = `
         width: 34px; height: 34px; border-radius: 10px; border: 1px solid ${C.border};
         display: flex; align-items: center; justify-content: center; cursor: pointer;
         font-size: 13.5px; font-weight: 600; color: ${C.text}; background: ${C.white};
+        transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
     }
+    .ad-page-btn:hover:not(:disabled) { transform: translateY(-2px); border-color: ${C.blue}; }
+    .ad-page-btn:active:not(:disabled) { transform: translateY(0) scale(0.94); }
     .ad-page-btn.active { background: ${C.navy}; color: white; border-color: ${C.navy}; }
     .ad-page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .ad-form-label { font-size: 13.5px; font-weight: 700; color: ${C.text}; margin: 1rem 0 0.4rem; display: block; }
     .ad-form-input, .ad-form-select {
         width: 100%; border: 1.5px solid ${C.border}; border-radius: 12px; padding: 0.75rem 0.9rem;
         font-size: 14px; font-family: ${font}; outline: none; color: ${C.text}; background: ${C.white};
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
+    .ad-form-input:focus, .ad-form-select:focus { border-color: ${C.blue}; box-shadow: 0 0 0 3px ${C.blue}22; }
     .ad-form-select-btn {
         width: 100%; border: 1.5px solid ${C.border}; border-radius: 12px; padding: 0.75rem 0.9rem;
         font-size: 14px; font-family: ${font}; color: ${C.text}; background: ${C.white};
@@ -442,16 +476,21 @@ export const sharedCss = `
         background: ${C.navy}; color: white; font-weight: 700;
         font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;
         box-shadow: 0 8px 20px rgba(11,59,54,0.22); font-family: ${font};
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
+    .ad-issue-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 26px rgba(11,59,54,0.3); }
+    .ad-issue-btn:active:not(:disabled) { transform: translateY(0) scale(0.98); }
     .ad-issue-btn:disabled { opacity: 0.6; cursor: not-allowed; }
     .ad-btn-outline {
         padding: 0.65rem 1.1rem; border-radius: 12px; border: 1.5px solid ${C.border}; background: ${C.white};
         color: ${C.text}; font-weight: 600; font-size: 13.5px; cursor: pointer; display: flex; align-items: center; gap: 8px;
-        font-family: ${font};
+        font-family: ${font}; transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
     }
-    .ad-btn-outline:hover { background: ${C.bg}; }
-    .ad-icon-btn { border: none; background: none; cursor: pointer; padding: 4px; display: flex; border-radius: 6px; }
-    .ad-icon-btn:hover { background: ${C.bg}; }
+    .ad-btn-outline:hover { background: ${C.bg}; border-color: ${C.blue}; transform: translateY(-2px); }
+    .ad-btn-outline:active { transform: translateY(0) scale(0.97); }
+    .ad-icon-btn { border: none; background: none; cursor: pointer; padding: 4px; display: flex; border-radius: 6px; transition: transform 0.15s ease, background 0.15s ease; }
+    .ad-icon-btn:hover { background: ${C.bg}; transform: scale(1.08); }
+    .ad-icon-btn:active { transform: scale(0.94); }
     .ad-menu {
         position: absolute; right: 0; top: 100%; margin-top: 4px; background: white; border: 1px solid ${C.border};
         border-radius: 12px; box-shadow: 0 8px 24px rgba(35,38,31,0.12); z-index: 10; min-width: 190px; overflow: hidden;
@@ -465,13 +504,26 @@ export const sharedCss = `
     .ad-picker-item:hover { background: ${C.bg}; }
     .ad-alert-banner { padding: 0.8rem 1rem; border-radius: 12px; font-size: 13.5px; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px; }
     .ad-page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
-    .ad-tab { padding: 0.55rem 1rem; border-radius: 10px; font-size: 13.5px; font-weight: 600; cursor: pointer; border: none; background: none; color: ${C.muted}; font-family: ${font}; }
+    .ad-tab { padding: 0.55rem 1rem; border-radius: 10px; font-size: 13.5px; font-weight: 600; cursor: pointer; border: none; background: none; color: ${C.muted}; font-family: ${font}; transition: background 0.15s ease, color 0.15s ease; }
+    .ad-tab:hover { color: ${C.navy}; }
     .ad-tab.active { background: ${C.white}; color: ${C.navy}; box-shadow: 0 1px 3px rgba(35,38,31,0.08); }
     .ad-tabs { display: flex; gap: 4px; background: ${C.bg}; padding: 4px; border-radius: 12px; width: fit-content; }
     .ad-accordion-item { border-bottom: 1px solid ${C.border}; }
     .ad-accordion-head { display: flex; align-items: center; justify-content: space-between; padding: 1rem 0; cursor: pointer; font-weight: 700; color: ${C.text}; font-size: 14.5px; }
+    .ad-status-pill { transition: transform 0.15s ease; }
+    .ad-status-pill:hover { transform: scale(1.05); }
     .ad-bar-anim { transform-origin: bottom; animation: adBarGrow 0.65s cubic-bezier(0.16,1,0.3,1) backwards; }
     @keyframes adBarGrow { from { transform: scaleY(0); opacity: 0.35; } to { transform: scaleY(1); opacity: 1; } }
+    .ad-bar-h-anim { width: var(--bar-w); animation: adBarGrowH 0.7s cubic-bezier(0.16,1,0.3,1) backwards; }
+    @keyframes adBarGrowH { from { width: 0; opacity: 0.4; } to { width: var(--bar-w); opacity: 1; } }
+    .ad-donut-wrap { animation: adDonutIn 0.6s cubic-bezier(0.16,1,0.3,1) backwards; transform-origin: center; }
+    @keyframes adDonutIn { from { opacity: 0; transform: scale(0.85) rotate(-8deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
+    .ad-donut-seg { transition: stroke-width 0.2s ease, opacity 0.2s ease; cursor: pointer; }
+    .ad-donut-seg:hover { opacity: 0.8; }
+    .ad-spark-line { stroke-dasharray: var(--spark-len); stroke-dashoffset: var(--spark-len); animation: adSparkDraw 1.1s cubic-bezier(0.16,1,0.3,1) forwards; }
+    @keyframes adSparkDraw { to { stroke-dashoffset: 0; } }
+    .ad-spark-area { animation: adFadeUp 0.8s ease 0.3s backwards; }
+    @keyframes adFadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
     @media (max-width: 1200px) {
         .ad-stats { grid-template-columns: repeat(2, 1fr); }
         .ad-content-grid { grid-template-columns: 1fr; }

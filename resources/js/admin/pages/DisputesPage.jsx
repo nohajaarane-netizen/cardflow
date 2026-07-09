@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom'
 import { C, fontTitle, Icon, useApi, STATUS_STYLES } from '../theme'
 import { useLanguage } from '../../i18n/LanguageContext'
 
-const TYPE_ICON = { fraud: 'shield', blocked: 'lock', expiration: 'close' }
+const TYPE_ICON = { fraud: 'shield', blocked: 'lock', expiration: 'close', security: 'shield' }
 
 export default function DisputesPage() {
     const { refreshBadge } = useOutletContext()
@@ -35,7 +35,7 @@ export default function DisputesPage() {
 
     const unreadCount = alerts.filter(a => !a.lue).length
 
-    const TYPE_LABELS = { fraud: t('admin.disputes.type_fraud'), blocked: t('admin.disputes.type_blocked'), expiration: t('admin.disputes.type_expiration') }
+    const TYPE_LABELS = { fraud: t('admin.disputes.type_fraud'), blocked: t('admin.disputes.type_blocked'), expiration: t('admin.disputes.type_expiration'), security: t('admin.disputes.type_security') }
 
     const TABS = [
         { key: 'all', label: t('admin.disputes.tab_all') },
@@ -43,6 +43,7 @@ export default function DisputesPage() {
         { key: 'fraud', label: t('admin.disputes.tab_fraud') },
         { key: 'blocked', label: t('admin.disputes.tab_blocked') },
         { key: 'expiration', label: t('admin.disputes.tab_expiration') },
+        { key: 'security', label: t('admin.disputes.tab_security') },
     ]
 
     return (
