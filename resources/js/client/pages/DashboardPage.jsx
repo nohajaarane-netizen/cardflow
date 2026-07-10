@@ -15,11 +15,13 @@ export default function DashboardPage() {
     const [errorMsg, setErrorMsg] = useState('')
 
     const [statusFilter, setStatusFilter] = useState('all')
-    const [visibleCount, setVisibleCount] = useState(3)
+    const [visibleCount, setVisibleCount] = useState(5)
 
     const [payBeneficiary, setPayBeneficiary] = useState('')
     const [payAmount, setPayAmount] = useState('')
-    const [payDesc, setPayDesc] = useState('')
+    const [payStep, setPayStep] = useState('form') // 'form' | 'otp'
+    const [payCacheKey, setPayCacheKey] = useState('')
+    const [payOtp, setPayOtp] = useState('')
     const [paying, setPaying] = useState(false)
     const [payMsg, setPayMsg] = useState(null)
 
@@ -40,17 +42,20 @@ export default function DashboardPage() {
     useEffect(() => { load() }, [load])
 
     useEffect(() => {
-        setBeneficiaries(JSON.parse(localStorage.getItem('cf_beneficiaries') || '[]'))
-    }, [])
+        api.get('/beneficiaries')
+            .then(res => setBeneficiaries(res.data))
+            .catch(() => {})
+    }, [api])
 
     const filteredTxAll = useMemo(() => tx
         .filter(t => statusFilter === 'all' || t.statut === statusFilter), [tx, statusFilter])
     const filteredTx = filteredTxAll.slice(0, visibleCount)
 
-    useEffect(() => { setVisibleCount(3) }, [statusFilter])
+    useEffect(() => { setVisibleCount(5) }, [statusFilter])
 
     const activeCards = cards.filter(c => c.statut === 'active')
 
+    // Étape 1 — lancer le virement : envoie l'OTP par SMS (virement bancaire sécurisé)
     const handlePay = async (e) => {
         e.preventDefault()
         setPayMsg(null)
@@ -64,18 +69,39 @@ export default function DashboardPage() {
         }
         setPaying(true)
         try {
-            const beneficiary = beneficiaries.find(b => String(b.id) === String(payBeneficiary))
-            await api.post('/payment', {
+            const res = await api.post('/payment/initiate', {
                 card_id: activeCards[0].id,
                 montant: Number(payAmount),
-                marchand: beneficiary ? beneficiary.name : payDesc || 'Virement',
+                beneficiary_id: payBeneficiary,
             })
-            setPayMsg({ type: 'success', key: 'client.dashboard.pay_success' })
-            setPayAmount('')
-            setPayDesc('')
-            await load()
+            setPayCacheKey(res.data.cache_key)
+            setPayStep('otp')
+            setPayMsg({ type: 'success', text: res.data.message, key: 'client.dashboard.otp_sent' })
         } catch (err) {
             setPayMsg({ type: 'error', text: err.response?.data?.message, key: 'client.dashboard.pay_error' })
+        } finally {
+            setPaying(false)
+        }
+    }
+
+    // Étape 2 — confirmer le virement avec le code reçu par SMS
+    const handlePayConfirm = async (e) => {
+        e.preventDefault()
+        setPayMsg(null)
+        setPaying(true)
+        try {
+            await api.post('/payment/confirm', { cache_key: payCacheKey, otp: payOtp })
+            setPayMsg({ type: 'success', key: 'client.dashboard.pay_success' })
+            setPayStep('form')
+            setPayAmount(''); setPayBeneficiary(''); setPayOtp('')
+            await load()
+        } catch (err) {
+            const data = err.response?.data
+            setPayMsg({ type: 'error', text: data?.message, key: 'client.dashboard.pay_error' })
+            if (data?.code_reponse === '62') {
+                setPayStep('form'); setPayAmount(''); setPayBeneficiary(''); setPayOtp('')
+                await load()
+            }
         } finally {
             setPaying(false)
         }
@@ -139,7 +165,7 @@ export default function DashboardPage() {
                         <button
                             className="ad-btn-outline"
                             style={{ justifyContent: 'center', marginTop: '1rem', width: '100%' }}
-                            onClick={() => setVisibleCount(v => v + 3)}
+                            onClick={() => setVisibleCount(v => v + 5)}
                         >
                             {t('client.dashboard.show_more')} <Icon name="chevron" size={14} />
                         </button>
@@ -197,32 +223,48 @@ export default function DashboardPage() {
                     </div>
                 </div>
 
-                <form onSubmit={handlePay} className="ad-grid-2" style={{ gridTemplateColumns: '1fr 1fr 1fr', alignItems: 'end', gap: '1rem' }}>
-                    <div>
-                        <label className="ad-form-label" style={{ marginTop: 0 }}>{t('client.dashboard.beneficiary')}</label>
-                        <select className="ad-form-input" value={payBeneficiary} onChange={e => setPayBeneficiary(e.target.value)}>
-                            <option value="">{t('client.dashboard.select_beneficiary')}</option>
-                            {beneficiaries.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                        </select>
-                    </div>
-                    <div>
-                        <label className="ad-form-label" style={{ marginTop: 0 }}>{t('client.dashboard.amount')}</label>
-                        <input className="ad-form-input" type="number" min="1" step="1" placeholder="0.00" value={payAmount} onChange={e => setPayAmount(e.target.value)} required />
-                    </div>
-                    <div>
-                        <label className="ad-form-label" style={{ marginTop: 0 }}>{t('client.dashboard.description_optional')}</label>
-                        <input className="ad-form-input" placeholder={t('client.dashboard.description_placeholder')} value={payDesc} onChange={e => setPayDesc(e.target.value)} />
-                    </div>
+                {payStep === 'form' ? (
+                    <form onSubmit={handlePay} className="ad-grid-2" style={{ gridTemplateColumns: '2fr 1fr', alignItems: 'end', gap: '1rem' }}>
+                        <div>
+                            <label className="ad-form-label" style={{ marginTop: 0 }}>{t('client.dashboard.beneficiary')}</label>
+                            <select className="ad-form-input" value={payBeneficiary} onChange={e => setPayBeneficiary(e.target.value)}>
+                                <option value="">{beneficiaries.length ? t('client.dashboard.select_beneficiary') : t('client.dashboard.no_beneficiary')}</option>
+                                {beneficiaries.map(b => <option key={b.id} value={b.id}>{b.prenom} {b.nom} — {b.banque}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="ad-form-label" style={{ marginTop: 0 }}>{t('client.dashboard.amount')}</label>
+                            <input className="ad-form-input" type="number" min="1" step="1" placeholder="0.00" value={payAmount} onChange={e => setPayAmount(e.target.value)} required />
+                        </div>
 
-                    <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginTop: '0.4rem' }}>
-                        <span style={{ fontSize: 12.5, color: C.muted, display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <Icon name="shield" size={14} /> {t('client.dashboard.secure_note')}
-                        </span>
-                        <button className="ad-issue-btn" type="submit" disabled={paying} style={{ width: 'auto', padding: '0.8rem 1.5rem' }}>
-                            {paying ? t('client.dashboard.sending') : t('client.dashboard.send_payment')} <Icon name="arrowRight" color="white" size={17} />
-                        </button>
-                    </div>
-                </form>
+                        <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginTop: '0.4rem' }}>
+                            <span style={{ fontSize: 12.5, color: C.muted, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <Icon name="shield" size={14} /> {t('client.dashboard.transfer_otp_note')}
+                            </span>
+                            <button className="ad-issue-btn" type="submit" disabled={paying} style={{ width: 'auto', padding: '0.8rem 1.5rem' }}>
+                                {paying ? t('client.dashboard.sending') : t('client.dashboard.send_payment')} <Icon name="arrowRight" color="white" size={17} />
+                            </button>
+                        </div>
+                    </form>
+                ) : (
+                    <form onSubmit={handlePayConfirm} className="ad-grid-2" style={{ gridTemplateColumns: '2fr 1fr', alignItems: 'end', gap: '1rem' }}>
+                        <div>
+                            <label className="ad-form-label" style={{ marginTop: 0 }}>{t('client.dashboard.otp_code')}</label>
+                            <input className="ad-form-input" value={payOtp} onChange={e => setPayOtp(e.target.value)} maxLength={6} required placeholder="______" style={{ letterSpacing: 6, textAlign: 'center', fontWeight: 700 }} />
+                        </div>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                            <button type="button" className="ad-btn-outline" style={{ justifyContent: 'center', flex: 1 }} onClick={() => { setPayStep('form'); setPayOtp(''); setPayMsg(null) }}>
+                                {t('client.payments.cancel')}
+                            </button>
+                            <button className="ad-issue-btn" type="submit" disabled={paying} style={{ width: 'auto', padding: '0.8rem 1.2rem', marginTop: 0 }}>
+                                {paying ? t('client.dashboard.sending') : t('client.dashboard.confirm')} <Icon name="check" color="white" size={16} />
+                            </button>
+                        </div>
+                        <div style={{ gridColumn: '1 / -1', fontSize: 12.5, color: C.muted, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <Icon name="bell" size={14} /> {t('client.dashboard.otp_instructions')}
+                        </div>
+                    </form>
+                )}
 
                 {payMsg && (
                     <div className="ad-alert-banner" style={{

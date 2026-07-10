@@ -377,6 +377,22 @@ export default function DashboardPage() {
                             <button type="button" className={`ad-toggle ${notifyEmail ? 'on' : 'off'}`} onClick={() => setNotifyEmail(v => !v)} />
                         </div>
 
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 12, padding: '1rem 0' }}>
+                            {[
+                                { icon: 'shield', text: t('admin.dashboard.trust_luhn') },
+                                { icon: 'lock', text: t('admin.dashboard.trust_encrypted') },
+                                { icon: 'check', text: t('admin.dashboard.trust_instant') },
+                                { icon: 'file', text: t('admin.dashboard.trust_audited') },
+                            ].map(item => (
+                                <div key={item.icon} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                    <div style={{ width: 32, height: 32, borderRadius: 9, background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                        <Icon name={item.icon} size={15} color={C.muted} />
+                                    </div>
+                                    <span style={{ fontSize: 12.5, color: C.muted }}>{item.text}</span>
+                                </div>
+                            ))}
+                        </div>
+
                         {issueMsg && (
                             <div className="ad-alert-banner" style={{
                                 marginTop: '1rem', marginBottom: 0,

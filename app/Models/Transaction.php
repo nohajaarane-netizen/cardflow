@@ -8,7 +8,7 @@ class Transaction extends Model
 {
     // Champs qu'on peut remplir
     protected $fillable = [
-        'card_id', 'montant', 'marchand',
+        'card_id', 'beneficiary_id', 'montant', 'marchand',
         'statut', 'code_reponse', 'otp', 'otp_verifie'
     ];
 
@@ -16,6 +16,12 @@ class Transaction extends Model
     public function card()
     {
         return $this->belongsTo(Card::class);
+    }
+
+    // Une transaction peut cibler un bénéficiaire (virement)
+    public function beneficiary()
+    {
+        return $this->belongsTo(Beneficiary::class);
     }
 
     // Une transaction peut avoir une alerte

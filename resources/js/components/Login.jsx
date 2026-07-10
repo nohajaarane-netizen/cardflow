@@ -22,6 +22,7 @@ const C = {
 export default function Login() {
     const [mode,     setMode]      = useState('login') // 'login' | 'signup'
     const [name,     setName]      = useState('')
+    const [telephone, setTelephone] = useState('')
     const [email,    setEmail]     = useState('')
     const [password, setPassword]  = useState('')
     const [confirmPassword, setConfirmPassword] = useState('')
@@ -68,6 +69,7 @@ export default function Login() {
         setError('')
         setPassword('')
         setConfirmPassword('')
+        setTelephone('')
     }
 
     const handleLogin = async (e) => {
@@ -100,7 +102,7 @@ export default function Login() {
         }
         setLoading(true)
         try {
-            const res = await axios.post('/api/register', { name, email, password })
+            const res = await axios.post('/api/register', { name, email, password, telephone })
             const { token, user } = res.data
             localStorage.setItem('token', token)
             localStorage.setItem('user', JSON.stringify(user))
@@ -435,6 +437,31 @@ export default function Login() {
                                         value={name}
                                         onChange={e => setName(e.target.value)}
                                         placeholder="Prénom Nom"
+                                        required
+                                        className="cf-input"
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Téléphone (inscription uniquement) */}
+                        {isSignup && (
+                            <div className="cf-fade cf-d3">
+                                <label style={{ fontSize: '15px', fontWeight: '600', color: C.text, display: 'block', marginBottom: '6px' }}>
+                                    Téléphone
+                                </label>
+                                <div className="cf-field">
+                                    <svg className="cf-lead" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', zIndex: 1 }}
+                                        width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                        <path d="M3 2h2.2l1 3-1.5 1.2a9 9 0 004.1 4.1L10 9l3 1v2.2a1.3 1.3 0 01-1.4 1.3A11 11 0 012 3.4 1.3 1.3 0 013 2z" stroke={C.muted} strokeWidth="1.3" strokeLinejoin="round"/>
+                                    </svg>
+                                    <input
+                                        type="tel"
+                                        value={telephone}
+                                        onChange={e => setTelephone(e.target.value)}
+                                        placeholder="+212612345678"
+                                        pattern="^\+212[5-7][0-9]{8}$"
+                                        title="Format attendu : +212 suivi de 9 chiffres (ex: +212612345678)"
                                         required
                                         className="cf-input"
                                     />

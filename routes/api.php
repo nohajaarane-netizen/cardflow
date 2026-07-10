@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CardController;
+use App\Http\Controllers\BeneficiaryController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\AlertController;
@@ -35,6 +36,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/cards/{id}',           [CardController::class, 'show']);    // voir une carte
     Route::patch('/cards/{id}/block',   [CardController::class, 'block']);   // bloquer
     Route::patch('/cards/{id}/unblock', [CardController::class, 'unblock']); // débloquer
+    // Bénéficiaires (propres à chaque client)
+    Route::get('/beneficiaries',         [BeneficiaryController::class, 'index']);   // mes bénéficiaires
+    Route::post('/beneficiaries',        [BeneficiaryController::class, 'store']);   // ajouter un bénéficiaire
+    Route::delete('/beneficiaries/{id}', [BeneficiaryController::class, 'destroy']); // supprimer
+
     // Paiement
     Route::post('/payment', [PaymentController::class, 'pay']); // simuler un paiement
     Route::post('/payment/initiate', [PaymentController::class, 'initiate']); // étape 1 — générer OTP

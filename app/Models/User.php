@@ -17,6 +17,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',       // admin ou client
+        'telephone',
 
     ];
 
@@ -30,5 +31,11 @@ class User extends Authenticatable
     public function cards()
     {
         return $this->hasMany(Card::class);
+    }
+
+    // Un client possède ses propres bénéficiaires
+    public function beneficiaries()
+    {
+        return $this->hasMany(Beneficiary::class);
     }
 }

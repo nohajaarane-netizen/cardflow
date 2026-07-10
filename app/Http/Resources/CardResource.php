@@ -17,9 +17,14 @@ class CardResource extends JsonResource
     */
     public function toArray(Request $request): array
     {
+        // Le titulaire peut voir le PAN complet et le CVV de SES cartes (comme
+        // au dos d'une vraie carte). Pour les autres (admin listant les cartes
+        // d'autrui), on ne renvoie que le numéro masqué et jamais le CVV.
+        $isOwner = $request->user() && $request->user()->id === $this->user_id;
+
         return [
             'id'         => $this->id,
-            'pan'        => $this->maskedPan(),           // numéro masqué
+            'pan'        => $this->maskedPan(),           // numéro masqué (recto)
             'type'       => $this->type,
             'statut'     => $this->statut,
             'plafond'    => $this->plafond,
@@ -30,8 +35,10 @@ class CardResource extends JsonResource
                     'name' => $this->user->name,
                 ];
             }),
+            // Données sensibles — uniquement pour le titulaire de la carte
+            'pan_full'   => $this->when($isOwner, $this->pan),
+            'cvv'        => $this->when($isOwner, $this->cvv),
             'created_at' => $this->created_at,
-            // Pas de CVV ici → jamais visible dans l'API
         ];
     }
 

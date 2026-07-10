@@ -15,11 +15,11 @@ const MAIN_NAV = [
 ]
 
 const OTHER_NAV = [
-    { to: '/admin/reports',  key: 'nav.admin.reports',  icon: 'file' },
-    { to: '/admin/settings', key: 'nav.admin.settings', icon: 'gear' },
-    { to: '/admin/users',    key: 'nav.admin.users',    icon: 'user' },
-    { to: '/admin/support',  key: 'nav.admin.support',  icon: 'help' },
+    { to: '/admin/users',      key: 'nav.admin.users',      icon: 'user' },
+    { to: '/admin/reports',    key: 'nav.admin.reports',    icon: 'file' },
     { to: '/admin/audit-logs', key: 'nav.admin.audit_logs', icon: 'shield' },
+    { to: '/admin/settings',   key: 'nav.admin.settings',   icon: 'sliders' },
+    { to: '/admin/support',    key: 'nav.admin.support',    icon: 'chat' },
 ]
 
 export default function AdminLayout() {
@@ -45,11 +45,18 @@ export default function AdminLayout() {
     }
 
     const renderNavItem = (item) => (
-        <NavLink key={item.to} to={item.to} className={({ isActive }) => `ad-nav-item ${isActive ? 'active' : ''}`}>
+        <NavLink key={item.to} to={item.to} className={({ isActive }) => `ad-nav-item ${isActive ? 'active' : ''}`} style={{ padding: '0.78rem 0.85rem' }}>
             {({ isActive }) => (
                 <>
-                    <Icon name={item.icon} color={isActive ? 'white' : C.muted} />
-                    {t(item.key)}
+                    <span style={{
+                        width: 32, height: 32, borderRadius: 9, flexShrink: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: isActive ? 'rgba(255,255,255,0.16)' : 'transparent',
+                        transition: 'background 0.15s ease',
+                    }}>
+                        <Icon name={item.icon} size={20} color={isActive ? 'white' : '#4B5565'} />
+                    </span>
+                    <span style={{ fontSize: 15 }}>{t(item.key)}</span>
                     {item.to === '/admin/disputes' && unreadAlerts > 0 && (
                         <span style={{
                             marginLeft: 'auto', background: isActive ? 'rgba(255,255,255,0.25)' : C.red,
@@ -70,15 +77,17 @@ export default function AdminLayout() {
                     <Logo size={30} color={C.text} />
                 </div>
 
-                <div className="ad-nav-group-label">{t('nav.group_main')}</div>
-                <nav className="ad-nav" style={{ flex: 'none' }}>
-                    {MAIN_NAV.map(renderNavItem)}
-                </nav>
+                <div className="ad-nav-scroll">
+                    <div className="ad-nav-group-label">{t('nav.group_main')}</div>
+                    <nav className="ad-nav">
+                        {MAIN_NAV.map(renderNavItem)}
+                    </nav>
 
-                <div className="ad-nav-group-label">{t('nav.group_other')}</div>
-                <nav className="ad-nav">
-                    {OTHER_NAV.map(renderNavItem)}
-                </nav>
+                    <div className="ad-nav-group-label">{t('nav.group_other')}</div>
+                    <nav className="ad-nav">
+                        {OTHER_NAV.map(renderNavItem)}
+                    </nav>
+                </div>
 
                 <div className="ad-admin-card">
                     <div className="ad-avatar">{initialsOf(admin.name) || 'AD'}</div>

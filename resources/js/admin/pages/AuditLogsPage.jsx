@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { C, fontTitle, Icon, formatDate, useApi, PAGE_SIZE } from '../theme'
+import { C, fontTitle, Icon, formatDateTime, useApi, PAGE_SIZE } from '../theme'
 import { useLanguage } from '../../i18n/LanguageContext'
 
 const ACTION_STYLES = {
@@ -82,7 +82,7 @@ export default function AuditLogsPage() {
                         )}
                         {pageLogs.map(log => (
                             <tr key={log.id}>
-                                <td style={{ color: C.muted }}>{formatDate(log.created_at)}</td>
+                                <td style={{ color: C.muted, fontFamily: 'monospace', fontSize: 12.5 }}>{formatDateTime(log.created_at)}</td>
                                 <td>
                                     {log.user ? (
                                         <div>

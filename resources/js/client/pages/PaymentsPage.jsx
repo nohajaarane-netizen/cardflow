@@ -10,25 +10,42 @@ export default function PaymentsPage() {
     const [loading, setLoading] = useState(true)
     const [page, setPage] = useState(1)
 
+    const [beneficiaries, setBeneficiaries] = useState([])
     const [cardId, setCardId] = useState('')
     const [amount, setAmount] = useState('')
-    const [merchant, setMerchant] = useState('')
+    const [benefMode, setBenefMode] = useState('existing') // 'existing' | 'new'
+    const [beneficiaryId, setBeneficiaryId] = useState('')
+    const [prenom, setPrenom] = useState('')
+    const [nom, setNom] = useState('')
+    const [rib, setRib] = useState('')
+    const [banque, setBanque] = useState('')
     const [step, setStep] = useState('form')
     const [cacheKey, setCacheKey] = useState('')
     const [otp, setOtp] = useState('')
     const [busy, setBusy] = useState(false)
     const [msg, setMsg] = useState(null)
 
+    const resetForm = () => {
+        setAmount(''); setBeneficiaryId(''); setPrenom(''); setNom(''); setRib(''); setBanque(''); setOtp('')
+    }
+
     const load = useCallback(async () => {
         setLoading(true)
         try {
-            const [cardsRes, txRes] = await Promise.allSettled([api.get('/cards'), api.get('/transactions')])
+            const [cardsRes, txRes, benefRes] = await Promise.allSettled([
+                api.get('/cards'), api.get('/transactions'), api.get('/beneficiaries'),
+            ])
             if (cardsRes.status === 'fulfilled') {
                 const list = cardsRes.value.data.data || cardsRes.value.data
                 setCards(list)
                 if (list.length && !cardId) setCardId(String(list[0].id))
             }
             if (txRes.status === 'fulfilled') setTx(txRes.value.data)
+            if (benefRes.status === 'fulfilled') {
+                setBeneficiaries(benefRes.value.data)
+                // Pas de bénéficiaire enregistré → on bascule d'office sur "nouveau"
+                if (!benefRes.value.data.length) setBenefMode('new')
+            }
         } finally {
             setLoading(false)
         }
@@ -42,14 +59,35 @@ export default function PaymentsPage() {
     const handleInitiate = async (e) => {
         e.preventDefault()
         setMsg(null)
+
+        // Construire la charge utile selon le mode (bénéficiaire existant ou nouveau)
+        const payload = { card_id: cardId, montant: Number(amount) }
+        if (benefMode === 'existing') {
+            if (!beneficiaryId) {
+                setMsg({ type: 'error', key: 'client.payments.select_beneficiary_error' })
+                return
+            }
+            payload.beneficiary_id = beneficiaryId
+        } else {
+            payload.prenom = prenom
+            payload.nom = nom
+            payload.rib = rib.replace(/\s+/g, '')
+            payload.banque = banque
+        }
+
         setBusy(true)
         try {
-            const res = await api.post('/payment/initiate', { card_id: cardId, montant: Number(amount), marchand: merchant })
+            const res = await api.post('/payment/initiate', payload)
             setCacheKey(res.data.cache_key)
             setStep('otp')
             setMsg({ type: 'success', text: res.data.message, key: 'client.payments.otp_sent' })
         } catch (err) {
-            setMsg({ type: 'error', text: err.response?.data?.message, key: 'client.payments.initiate_error' })
+            setMsg({
+                type: 'error',
+                text: err.response?.data?.message
+                    || Object.values(err.response?.data?.errors || {})[0]?.[0],
+                key: 'client.payments.initiate_error',
+            })
         } finally {
             setBusy(false)
         }
@@ -63,18 +101,14 @@ export default function PaymentsPage() {
             await api.post('/payment/confirm', { cache_key: cacheKey, otp })
             setMsg({ type: 'success', key: 'client.payments.confirm_success' })
             setStep('form')
-            setAmount('')
-            setMerchant('')
-            setOtp('')
+            resetForm()
             await load()
         } catch (err) {
             const data = err.response?.data
             setMsg({ type: 'error', text: data?.message, key: 'client.payments.otp_invalid' })
             if (data?.code_reponse === '62') {
                 setStep('form')
-                setAmount('')
-                setMerchant('')
-                setOtp('')
+                resetForm()
                 await load()
             }
         } finally {
@@ -142,15 +176,63 @@ export default function PaymentsPage() {
                                 {cards.map(c => <option key={c.id} value={c.id}>{c.pan} — {c.type}</option>)}
                             </select>
 
-                            <label className="ad-form-label">{t('client.payments.merchant')}</label>
-                            <input className="ad-form-input" value={merchant} onChange={e => setMerchant(e.target.value)} placeholder={t('client.payments.merchant_placeholder')} required />
+                            {/* Choix du bénéficiaire — enregistré ou nouveau */}
+                            <label className="ad-form-label">{t('client.payments.beneficiary')}</label>
+                            <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                                <button type="button"
+                                    onClick={() => setBenefMode('existing')}
+                                    className="ad-filter-btn"
+                                    style={{ flex: 1, justifyContent: 'center', padding: '0.5rem', background: benefMode === 'existing' ? C.navy : undefined, color: benefMode === 'existing' ? 'white' : undefined, borderColor: benefMode === 'existing' ? C.navy : undefined }}
+                                    disabled={!beneficiaries.length}
+                                >
+                                    <Icon name="users" size={13} color={benefMode === 'existing' ? 'white' : C.muted} /> {t('client.payments.saved_beneficiary')}
+                                </button>
+                                <button type="button"
+                                    onClick={() => setBenefMode('new')}
+                                    className="ad-filter-btn"
+                                    style={{ flex: 1, justifyContent: 'center', padding: '0.5rem', background: benefMode === 'new' ? C.navy : undefined, color: benefMode === 'new' ? 'white' : undefined, borderColor: benefMode === 'new' ? C.navy : undefined }}
+                                >
+                                    <Icon name="plus" size={13} color={benefMode === 'new' ? 'white' : C.muted} /> {t('client.payments.new_beneficiary')}
+                                </button>
+                            </div>
+
+                            {benefMode === 'existing' ? (
+                                <select className="ad-form-input" value={beneficiaryId} onChange={e => setBeneficiaryId(e.target.value)}>
+                                    <option value="">{t('client.payments.select_beneficiary')}</option>
+                                    {beneficiaries.map(b => (
+                                        <option key={b.id} value={b.id}>{b.prenom} {b.nom} — {b.banque}</option>
+                                    ))}
+                                </select>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                    <div style={{ display: 'flex', gap: 10 }}>
+                                        <input className="ad-form-input" style={{ margin: 0 }} value={prenom} onChange={e => setPrenom(e.target.value)} placeholder={t('client.beneficiaries.first_name')} required={benefMode === 'new'} />
+                                        <input className="ad-form-input" style={{ margin: 0 }} value={nom} onChange={e => setNom(e.target.value)} placeholder={t('client.beneficiaries.last_name')} required={benefMode === 'new'} />
+                                    </div>
+                                    <input className="ad-form-input" style={{ margin: 0 }} value={rib} onChange={e => setRib(e.target.value)} placeholder={t('client.beneficiaries.rib_placeholder')} inputMode="numeric" required={benefMode === 'new'} />
+                                    <input className="ad-form-input" style={{ margin: 0 }} value={banque} onChange={e => setBanque(e.target.value)} placeholder={t('client.beneficiaries.bank_placeholder')} required={benefMode === 'new'} />
+                                    <div style={{ fontSize: 11.5, color: C.muted, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                        <Icon name="check" size={13} color={C.green} /> {t('client.payments.autosave_note')}
+                                    </div>
+                                </div>
+                            )}
 
                             <label className="ad-form-label">{t('client.payments.amount_mad')}</label>
                             <input className="ad-form-input" type="number" min="1" value={amount} onChange={e => setAmount(e.target.value)} required />
 
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, color: C.muted, textAlign: 'center', padding: '1rem 0' }}>
-                                <Icon name="shield" size={26} color={C.border} />
-                                <span style={{ fontSize: 12.5, maxWidth: 240 }}>{t('client.dashboard.secure_note')}</span>
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 12, padding: '1rem 0' }}>
+                                {[
+                                    { icon: 'lock', text: t('client.payments.trust_encryption') },
+                                    { icon: 'shield', text: t('client.payments.trust_3dsecure') },
+                                    { icon: 'bell', text: t('client.payments.trust_notification') },
+                                ].map(item => (
+                                    <div key={item.icon} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                        <div style={{ width: 34, height: 34, borderRadius: 10, background: C.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                            <Icon name={item.icon} size={16} color={C.muted} />
+                                        </div>
+                                        <span style={{ fontSize: 12.5, color: C.muted }}>{item.text}</span>
+                                    </div>
+                                ))}
                             </div>
 
                             {msg && (

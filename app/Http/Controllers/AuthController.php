@@ -12,16 +12,20 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users,email',
-            'password' => 'required|string|min:6',
+            'name'      => 'required|string|max:255',
+            'email'     => 'required|email|unique:users,email',
+            'password'  => 'required|string|min:6',
+            'telephone' => ['required', 'string', 'regex:/^\+212[5-7][0-9]{8}$/'],
+        ], [
+            'telephone.regex' => 'Le numéro de téléphone doit être un numéro marocain valide au format +212XXXXXXXXX.',
         ]);
 
         $user = User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
-            'password' => Hash::make($request->password),
-            'role'     => 'client',
+            'name'      => $request->name,
+            'email'     => $request->email,
+            'password'  => Hash::make($request->password),
+            'role'      => 'client',
+            'telephone' => $request->telephone,
         ]);
 
         $token = $user->createToken('auth_token')->plainTextToken;
@@ -101,18 +105,23 @@ class AuthController extends Controller
         $user = $request->user();
 
         $request->validate([
-            'name'  => 'sometimes|string|max:255',
-            'email' => 'sometimes|email|unique:users,email,' . $user->id,
+            'name'      => 'sometimes|string|max:255',
+            'email'     => 'sometimes|email|unique:users,email,' . $user->id,
+            'telephone' => ['sometimes', 'string', 'regex:/^\+212[5-7][0-9]{8}$/'],
+        ], [
+            'telephone.regex' => 'Le numéro de téléphone doit être un numéro marocain valide au format +212XXXXXXXXX.',
         ]);
 
-        if ($request->has('name'))  $user->name  = $request->name;
-        if ($request->has('email')) $user->email = $request->email;
+        if ($request->has('name'))      $user->name      = $request->name;
+        if ($request->has('email'))     $user->email     = $request->email;
+        if ($request->has('telephone')) $user->telephone = $request->telephone;
 
         $user->save();
 
         AuditService::logRequest($request, 'update_profile', 'User', $user->id, [
-            'name'  => $user->name,
-            'email' => $user->email,
+            'name'      => $user->name,
+            'email'     => $user->email,
+            'telephone' => $user->telephone,
         ]);
 
         return response()->json([

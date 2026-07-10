@@ -8,6 +8,7 @@ export default function CardsPage() {
     const [cards, setCards] = useState([])
     const [loading, setLoading] = useState(true)
     const [revealedId, setRevealedId] = useState(null)
+    const [flippedId, setFlippedId] = useState(null)
     const [busyId, setBusyId] = useState(null)
 
     const load = useCallback(async () => {
@@ -56,31 +57,74 @@ export default function CardsPage() {
                 <StatCard label={t('client.cards.total_limit')} value={loading ? '…' : `${counts.limit.toLocaleString('fr-FR')} MAD`} caption={t('client.cards.cumulated_ceiling')} />
             </div>
 
+            <style>{`
+                .cf-flip { perspective: 1400px; width: 100%; aspect-ratio: 1.586 / 1; cursor: pointer; }
+                .cf-flip-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s cubic-bezier(0.4,0.2,0.2,1); transform-style: preserve-3d; }
+                .cf-flip.flipped .cf-flip-inner { transform: rotateY(180deg); }
+                .cf-face { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 20px; overflow: hidden;
+                    -webkit-backface-visibility: hidden; backface-visibility: hidden; box-shadow: 0 12px 30px rgba(27,35,64,0.18); }
+                .cf-face-back { transform: rotateY(180deg); }
+            `}</style>
+
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.4rem', marginBottom: '1.25rem' }}>
-                {cards.map(card => (
+                {cards.map(card => {
+                    const gradient = card.type === 'visa'
+                        ? `linear-gradient(135deg, ${C.tealDark}, ${C.teal})`
+                        : `linear-gradient(135deg, #2E3650, ${C.navy})`
+                    const isFlipped = flippedId === card.id
+                    return (
                     <div key={card.id} style={{ width: 320, flexShrink: 0 }}>
-                        <div style={{
-                            width: '100%', aspectRatio: '1.586 / 1', boxSizing: 'border-box',
-                            borderRadius: 20, padding: '1.4rem', color: 'white', position: 'relative', overflow: 'hidden',
-                            opacity: card.statut === 'blocked' ? 0.55 : 1,
-                            display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
-                            background: card.type === 'visa'
-                                ? `linear-gradient(135deg, ${C.tealDark}, ${C.teal})`
-                                : `linear-gradient(135deg, #2E3650, ${C.navy})`,
-                        }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <span style={{ fontSize: 13, opacity: 0.85, fontWeight: 600 }}>{card.statut === 'blocked' ? t('client.cards.blocked_card') : t('client.cards.virtual_card')}</span>
-                                <span style={{ fontFamily: fontTitle, fontWeight: 800, fontSize: 15 }}>CardFlow</span>
-                            </div>
-                            <div style={{ fontSize: 18, letterSpacing: 2, fontWeight: 700, fontFamily: 'monospace' }}>
-                                {revealedId === card.id ? card.pan : card.pan.replace(/\d(?=\d{4})/g, '•')}
-                            </div>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <div>
-                                    <div style={{ fontSize: 10, opacity: 0.75, textTransform: 'uppercase' }}>{t('client.cards.valid_thru')}</div>
-                                    <div style={{ fontSize: 13, fontWeight: 600 }}>{card.expiration ? new Date(card.expiration).toLocaleDateString('fr-FR', { month: '2-digit', year: '2-digit' }) : '—'}</div>
+                        <div
+                            className={`cf-flip ${isFlipped ? 'flipped' : ''}`}
+                            onClick={() => setFlippedId(isFlipped ? null : card.id)}
+                            style={{ opacity: card.statut === 'blocked' ? 0.6 : 1 }}
+                            title={t('client.cards.flip_hint')}
+                        >
+                            <div className="cf-flip-inner">
+                                {/* ══ RECTO ══ */}
+                                <div className="cf-face" style={{
+                                    padding: '1.4rem', color: 'white', background: gradient,
+                                    display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxSizing: 'border-box',
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                        <span style={{ fontSize: 13, opacity: 0.85, fontWeight: 600 }}>{card.statut === 'blocked' ? t('client.cards.blocked_card') : t('client.cards.virtual_card')}</span>
+                                        <span style={{ fontFamily: fontTitle, fontWeight: 800, fontSize: 15 }}>CardFlow</span>
+                                    </div>
+                                    <div style={{ width: 42, height: 30, borderRadius: 6, background: 'linear-gradient(135deg, #E6C877, #C9A24B)', opacity: 0.9 }} />
+                                    <div style={{ fontSize: 18, letterSpacing: 2, fontWeight: 700, fontFamily: 'monospace' }}>
+                                        {revealedId === card.id ? (card.pan_full || card.pan) : card.pan.replace(/\d(?=\d{4})/g, '•')}
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                        <div>
+                                            <div style={{ fontSize: 10, opacity: 0.75, textTransform: 'uppercase' }}>{t('client.cards.valid_thru')}</div>
+                                            <div style={{ fontSize: 13, fontWeight: 600 }}>{card.expiration ? new Date(card.expiration).toLocaleDateString('fr-FR', { month: '2-digit', year: '2-digit' }) : '—'}</div>
+                                        </div>
+                                        <div style={{ fontSize: 16, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>{card.type}</div>
+                                    </div>
                                 </div>
-                                <div style={{ fontSize: 16, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>{card.type}</div>
+
+                                {/* ══ VERSO — CVV ══ */}
+                                <div className="cf-face cf-face-back" style={{
+                                    color: 'white', background: gradient,
+                                    display: 'flex', flexDirection: 'column', boxSizing: 'border-box',
+                                }}>
+                                    <div style={{ height: 44, background: 'rgba(0,0,0,0.55)', marginTop: '1.3rem' }} />
+                                    <div style={{ padding: '1rem 1.4rem', display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
+                                        <div style={{ fontSize: 10, opacity: 0.75, textTransform: 'uppercase', letterSpacing: 1 }}>{t('client.cards.cvv_label')}</div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                            <div style={{
+                                                background: 'rgba(255,255,255,0.92)', color: '#111', fontFamily: 'monospace',
+                                                fontSize: 16, fontWeight: 800, letterSpacing: 3, padding: '4px 14px', borderRadius: 5,
+                                            }}>
+                                                {revealedId === card.id ? (card.cvv || '•••') : '•••'}
+                                            </div>
+                                            <span style={{ fontSize: 11, opacity: 0.7 }}>{t('client.cards.cvv_hint')}</span>
+                                        </div>
+                                        <div style={{ marginTop: 'auto', fontSize: 10.5, opacity: 0.65, lineHeight: 1.4 }}>
+                                            {t('client.cards.cvv_warning')}
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div style={{ display: 'flex', gap: 8, marginTop: '0.75rem' }}>
@@ -102,7 +146,8 @@ export default function CardsPage() {
                             </button>
                         </div>
                     </div>
-                ))}
+                    )
+                })}
                 {!loading && cards.length === 0 && (
                     <div className="ad-panel" style={{ textAlign: 'center', color: C.muted, width: '100%' }}>{t('client.cards.no_card')}</div>
                 )}
@@ -112,14 +157,15 @@ export default function CardsPage() {
                 <h2 style={{ fontFamily: fontTitle, fontSize: 17, fontWeight: 800, color: C.text, margin: '0 0 1.1rem' }}>{t('client.cards.card_details')}</h2>
                 <div style={{ overflowX: 'auto' }}>
                 <table className="ad-table">
-                    <thead><tr><th>{t('client.cards.number')}</th><th>{t('common.type')}</th><th>{t('client.cards.limit')}</th><th>{t('common.status')}</th><th>{t('client.cards.expiry')}</th></tr></thead>
+                    <thead><tr><th>{t('client.cards.number')}</th><th>{t('client.cards.cvv_label')}</th><th>{t('common.type')}</th><th>{t('client.cards.limit')}</th><th>{t('common.status')}</th><th>{t('client.cards.expiry')}</th></tr></thead>
                     <tbody>
                         {!loading && cards.length === 0 && (
-                            <tr><td colSpan={5} style={{ textAlign: 'center', color: C.muted, padding: '2rem 0' }}>{t('client.cards.no_card_found')}</td></tr>
+                            <tr><td colSpan={6} style={{ textAlign: 'center', color: C.muted, padding: '2rem 0' }}>{t('client.cards.no_card_found')}</td></tr>
                         )}
                         {cards.map(card => (
                             <tr key={card.id}>
-                                <td style={{ fontFamily: 'monospace' }}>{card.pan}</td>
+                                <td style={{ fontFamily: 'monospace' }}>{revealedId === card.id ? (card.pan_full || card.pan) : card.pan}</td>
+                                <td style={{ fontFamily: 'monospace' }}>{revealedId === card.id ? (card.cvv || '—') : '•••'}</td>
                                 <td style={{ textTransform: 'capitalize' }}>{card.type}</td>
                                 <td>{Number(card.plafond).toLocaleString('fr-FR')} MAD</td>
                                 <td><span className="ad-status-pill" style={{ background: STATUS_STYLES[card.statut]?.bg, color: STATUS_STYLES[card.statut]?.color }}>

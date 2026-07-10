@@ -35,4 +35,14 @@ return [
         ],
     ],
 
+    'twilio' => [
+        'sid' => env('TWILIO_SID'),
+        'auth_token' => env('TWILIO_AUTH_TOKEN'),
+        'verify_sid' => env('TWILIO_VERIFY_SID'),
+        // Mode test local — court-circuite l'envoi SMS réel (utile quand Twilio
+        // bloque temporairement un numéro trial). Code fixe accepté : 000000.
+        // NE JAMAIS activer en production.
+        'otp_bypass' => env('OTP_BYPASS', false),
+    ],
+
 ];

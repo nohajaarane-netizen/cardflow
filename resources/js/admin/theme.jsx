@@ -4,29 +4,30 @@ import axios from 'axios'
 export const font      = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
 export const fontTitle = "'Plus Jakarta Sans', 'Inter', sans-serif"
 
-/* Palette HPS : navy sombre + accent rouge-orange (trait du logo), fond neutre clair */
+/* Palette HPS — navy sombre + accent terracotta feutré (trait du logo), tons de
+   statut désaturés pour un rendu de dashboard bancaire sobre plutôt que criard. */
 export const C = {
     navy:     '#1B2340',
-    blue:     '#F4A341',
-    blueDark: '#E63946',
-    teal:     '#F4A341',
+    blue:     '#D98A4A',
+    blueDark: '#B5502F',
+    teal:     '#3F8F82',
     tealDark: '#1B2340',
     slate:    '#6B7280',
-    purple:   '#8B5CF6',
+    purple:   '#7C6FC4',
     muted:    '#6B7280',
     border:   '#E1E5F0',
     bg:       '#EBEEF6',
     white:    '#FFFFFF',
     text:     '#111111',
-    green:    '#1E9E5A',
-    greenBg:  '#E1F6E8',
-    red:      '#E63946',
-    redBg:    '#FCE7E7',
-    amber:    '#B8860B',
-    amberBg:  '#FBF0DA',
+    green:    '#2F9E6E',
+    greenBg:  '#E3F5EC',
+    red:      '#C0453C',
+    redBg:    '#FBEAE8',
+    amber:    '#B7791F',
+    amberBg:  '#FBF2DE',
 }
 
-export const CATEGORICAL = [C.tealDark, C.teal, C.amber, C.blueDark, C.red]
+export const CATEGORICAL = [C.tealDark, C.teal, C.blue, C.amber, C.red]
 
 export const PAGE_SIZE = 8
 
@@ -37,6 +38,16 @@ export function initialsOf(name = '') {
 export function formatDate(iso) {
     if (!iso) return '—'
     return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+// Horodatage précis (jour + heure:minute:seconde) — utilisé pour les logs d'audit,
+// où la traçabilité exacte de l'action importe pour la sécurité.
+export function formatDateTime(iso) {
+    if (!iso) return '—'
+    return new Date(iso).toLocaleString('fr-FR', {
+        day: '2-digit', month: 'short', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+    })
 }
 
 export function formatMoney(n) {
@@ -74,6 +85,7 @@ export function Icon({ name, size = 18, color = C.muted, style }) {
         case 'chart': return <svg {...p}><path d="M4 20V10M11 20V4M18 20v-7" stroke={color} strokeWidth="1.7" strokeLinecap="round"/></svg>
         case 'file': return <svg {...p}><path d="M6 3h8l5 5v13a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z" stroke={color} strokeWidth="1.7" strokeLinejoin="round"/><path d="M14 3v5h5" stroke={color} strokeWidth="1.7" strokeLinejoin="round"/></svg>
         case 'gear': return <svg {...p}><circle cx="12" cy="12" r="3" stroke={color} strokeWidth="1.7"/><path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4" stroke={color} strokeWidth="1.7" strokeLinecap="round"/></svg>
+        case 'sliders': return <svg {...p}><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h13M21 18h-1" stroke={color} strokeWidth="1.7" strokeLinecap="round"/><circle cx="15" cy="6" r="2.1" fill="none" stroke={color} strokeWidth="1.7"/><circle cx="8" cy="12" r="2.1" fill="none" stroke={color} strokeWidth="1.7"/><circle cx="18" cy="18" r="2.1" fill="none" stroke={color} strokeWidth="1.7"/></svg>
         case 'user': return <svg {...p}><circle cx="12" cy="8" r="3.4" stroke={color} strokeWidth="1.7"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6" stroke={color} strokeWidth="1.7" strokeLinecap="round"/></svg>
         case 'help': return <svg {...p}><circle cx="12" cy="12" r="9" stroke={color} strokeWidth="1.7"/><path d="M9.5 9.3a2.5 2.5 0 014.9.7c0 1.7-2.4 1.9-2.4 3.6" stroke={color} strokeWidth="1.7" strokeLinecap="round"/><circle cx="12" cy="17" r="0.9" fill={color}/></svg>
         case 'bell': return <svg {...p}><path d="M6 9a6 6 0 0112 0v5l1.5 3h-15L6 14V9z" stroke={color} strokeWidth="1.7" strokeLinejoin="round"/><path d="M10 20a2 2 0 004 0" stroke={color} strokeWidth="1.7" strokeLinecap="round"/></svg>
@@ -187,26 +199,45 @@ export function VerticalBarChart({ data, color = C.teal, height = 180, showAxis 
     const max = Math.max(...data.map(d => d.value), 1)
     const ticks = showAxis ? Array.from({ length: 5 }, (_, i) => Math.round((max / 4) * (4 - i))) : []
     const maxIndex = data.reduce((best, d, i) => (d.value > data[best].value ? i : best), 0)
+
+    // Zones à hauteur fixe (valeur / piste des barres / libellé sur 2 lignes max) pour
+    // que la base de toutes les barres soit strictement alignée, quelle que soit la
+    // longueur du libellé (ex: "Carrefour Maroc" vs "Amazon").
+    const VALUE_H = 18
+    const LABEL_H = 32
+    const GAP = 8
+    const trackHeight = Math.max(height - VALUE_H - LABEL_H - GAP * 2, 24)
+
     return (
         <div style={{ display: 'flex', gap: 14, width: '100%' }}>
             {showAxis && (
-                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height, paddingBottom: 22, flexShrink: 0 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: VALUE_H + GAP + trackHeight, flexShrink: 0 }}>
                     {ticks.map(t => <span key={t} style={{ fontSize: 11, color: C.muted, whiteSpace: 'nowrap' }}>{t.toLocaleString('fr-FR')}</span>)}
                 </div>
             )}
-            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '3%', height, paddingTop: 10, flex: 1, width: '100%', borderLeft: showAxis ? `1px solid ${C.border}` : 'none', paddingLeft: showAxis ? 14 : 0 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', gap: '3%', flex: 1, width: '100%', borderLeft: showAxis ? `1px solid ${C.border}` : 'none', paddingLeft: showAxis ? 14 : 0 }}>
                 {data.map((d, i) => (
-                    <div key={d.label} title={`${d.label}: ${d.value}`} style={{ flex: 1, maxWidth: 64, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, height: '100%', justifyContent: 'flex-end' }}>
-                        <span style={{ fontSize: 11.5, fontWeight: 700, color: highlightMax && i === maxIndex ? C.navy : C.muted }}>{d.value}</span>
-                        <div className="ad-bar-anim" style={{
-                            width: '100%', maxWidth: 34,
-                            height: `${Math.max((d.value / max) * 100, 4)}%`,
-                            background: highlightMax && i === maxIndex ? C.navy : color,
-                            borderRadius: '8px 8px 3px 3px',
-                            transition: 'height 0.5s ease',
-                            animationDelay: `${i * 70}ms`,
-                        }} />
-                        <span style={{ fontSize: 12, color: C.muted, fontWeight: 600 }}>{d.label}</span>
+                    <div key={d.label} title={`${d.label}: ${d.value}`} style={{ flex: 1, maxWidth: 64, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <div style={{ height: VALUE_H, display: 'flex', alignItems: 'flex-end' }}>
+                            <span style={{ fontSize: 11.5, fontWeight: 700, color: highlightMax && i === maxIndex ? C.navy : C.muted, whiteSpace: 'nowrap' }}>{d.value}</span>
+                        </div>
+                        <div style={{ height: trackHeight, marginTop: GAP, width: '100%', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+                            <div className="ad-bar-anim" style={{
+                                width: '100%', maxWidth: 34,
+                                height: `${Math.max((d.value / max) * 100, 6)}%`,
+                                background: highlightMax && i === maxIndex ? C.navy : color,
+                                borderRadius: '8px 8px 3px 3px',
+                                transition: 'height 0.5s ease',
+                                animationDelay: `${i * 70}ms`,
+                            }} />
+                        </div>
+                        <div style={{ height: LABEL_H, marginTop: GAP, width: '100%', display: 'flex', justifyContent: 'center' }}>
+                            <span style={{
+                                fontSize: 12, color: C.muted, fontWeight: 600, textAlign: 'center', lineHeight: '15px',
+                                display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden', wordBreak: 'break-word', maxWidth: '100%',
+                            }}>{d.label}</span>
+                        </div>
                     </div>
                 ))}
             </div>
@@ -321,11 +352,15 @@ export const sharedCss = `
         width: 260px; background: ${C.white}; border-right: 1px solid ${C.border};
         display: flex; flex-direction: column; padding: 1.4rem 1.1rem; position: sticky; top: 0; height: 100vh;
     }
-    .ad-logo { display: flex; align-items: center; gap: 10px; padding: 0.2rem 0.3rem 1.5rem; }
-    .ad-nav-group-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; color: ${C.muted}; text-transform: uppercase; padding: 0 0.7rem; margin: 1.1rem 0 0.5rem; }
+    .ad-logo { display: flex; align-items: center; gap: 10px; padding: 0.2rem 0.3rem 1.5rem; flex-shrink: 0; }
+    .ad-nav-scroll {
+        flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none;
+        display: flex; flex-direction: column;
+    }
+    .ad-nav-scroll::-webkit-scrollbar { display: none; }
+    .ad-nav-group-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; color: ${C.muted}; text-transform: uppercase; padding: 0 0.7rem; margin: 1.1rem 0 0.5rem; flex-shrink: 0; }
     .ad-nav-group-label:first-of-type { margin-top: 0; }
-    .ad-nav { display: flex; flex-direction: column; gap: 3px; flex: 1; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; }
-    .ad-nav::-webkit-scrollbar { display: none; }
+    .ad-nav { display: flex; flex-direction: column; gap: 3px; flex-shrink: 0; }
     .ad-nav-item {
         display: flex; align-items: center; gap: 12px; padding: 0.68rem 0.85rem;
         border-radius: 11px; cursor: pointer; font-size: 14px; font-weight: 600;
